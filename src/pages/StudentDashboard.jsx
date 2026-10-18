@@ -27,7 +27,7 @@ import {
   getStudentProfile,
   getStudentRequests,
   getStudentSubjects,
-} from "../services/studentApi";
+} from "../services/studentApi.js";
 
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
