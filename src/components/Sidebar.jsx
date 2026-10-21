@@ -99,32 +99,26 @@ function Sidebar({ role, isOpen, closeSidebar }) {
     {
       name: "Dashboard",
       path: "/admin-dashboard",
-      icon: LayoutDashboard,
     },
     {
       name: "Directory",
       path: "/admin-dashboard?section=directory",
-      icon: Users,
     },
     {
       name: "Enrollment",
       path: "/admin-dashboard?section=enrollment",
-      icon: GraduationCap,
     },
     {
       name: "Reports",
       path: "/admin-dashboard?section=reports",
-      icon: FileBarChart,
     },
     {
       name: "Announcements",
       path: "/admin-dashboard?section=announcements",
-      icon: Bell,
     },
     {
       name: "Service Requests",
       path: "/admin-dashboard?section=requests",
-      icon: ClipboardList,
     },
   ];
 
