@@ -12,6 +12,7 @@ import {
   getAdminStatistics,
   getEnrollmentOverview,
   getReports,
+  createAnnouncement,
 } from "../services/adminApi.js";
 
 function AdminDashboard() {
@@ -29,6 +30,12 @@ function AdminDashboard() {
   const [pageMessage, setPageMessage] = useState("");
 
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: "",
+    description: "",
+  });
+
+  const [announcementSubmitting, setAnnouncementSubmitting] = useState(false);
 
   useEffect(() => {
     loadAdminDashboard();
@@ -77,6 +84,42 @@ function AdminDashboard() {
     };
 
     return descriptions[section] || descriptions.dashboard;
+  }
+
+  async function submitAnnouncement() {
+    if (
+      !announcementForm.title.trim() ||
+      !announcementForm.description.trim()
+    ) {
+      alert("Please complete all fields.");
+      return;
+    }
+
+    try {
+      setAnnouncementSubmitting(true);
+
+      const response = await createAnnouncement(announcementForm);
+
+      const newAnnouncement = response?.data || response;
+
+      setAnnouncements((previousAnnouncements) => [
+        newAnnouncement,
+        ...previousAnnouncements,
+      ]);
+
+      setAnnouncementForm({
+        title: "",
+        description: "",
+      });
+
+      setShowAnnouncementModal(false);
+
+      changeSection("announcements");
+    } catch (error) {
+      alert(error.message || "Failed to create announcement.");
+    } finally {
+      setAnnouncementSubmitting(false);
+    }
   }
 
   async function loadAdminDashboard() {
@@ -194,22 +237,26 @@ function AdminDashboard() {
 
           <p>{getSectionDescription(currentSection)}</p>
         </div>
-
+    
         <div className="heading-actions">
-          <button className="secondary-button">
-            <Download size={19} />
-            Generate Report
-          </button>
-
           <button
             type="button"
-            className="primary-button"
-            onClick={() => setShowAnnouncementModal(true)}
+            className="secondary-button"
+            onClick={() => {
+              changeSection("reports");
+            }}
           >
-            <Plus size={19} />
-            New Announcement
+            <Download size={19} />
+            View Reports
           </button>
+
+          
         </div>
+      </section>
+
+      <section className="stats-grid">
+        {Array.isArray(statistics) &&
+          statistics.map((stat) => <StatCard key={stat.title} {...stat} />)}
       </section>
 
       {currentSection === "dashboard" && (
@@ -218,73 +265,140 @@ function AdminDashboard() {
           announcements={announcements}
           requests={requests}
           changeSection={changeSection}
+          setShowAnnouncementModal={setShowAnnouncementModal}
         />
       )}
 
-      {currentSection === "directory" && <AdminDirectorySection />}
+      {currentSection === "directory" && (
+        <AdminDirectorySection changeSection={changeSection} />
+      )}
 
       {currentSection === "enrollment" && (
-        <AdminEnrollmentSection enrollmentOverview={enrollmentOverview} />
+        <AdminEnrollmentSection
+          enrollmentOverview={enrollmentOverview}
+          changeSection={changeSection}
+        />
       )}
 
       {currentSection === "reports" && (
-        <AdminReportsSection reports={reports} />
+        <AdminReportsSection reports={reports} changeSection={changeSection} />
       )}
 
       {currentSection === "announcements" && (
-        <AdminAnnouncementsSection announcements={announcements} />
+        <AdminAnnouncementsSection
+          announcements={announcements}
+          changeSection={changeSection}
+        />
       )}
 
       {currentSection === "requests" && (
-        <AdminRequestsSection requests={requests} />
+        <AdminRequestsSection
+          requests={requests}
+          changeSection={changeSection}
+        />
+      )}
+
+      {showAnnouncementModal && (
+        <AnnouncementModal
+          form={announcementForm}
+          setForm={setAnnouncementForm}
+          submitAnnouncement={submitAnnouncement}
+          submitting={announcementSubmitting}
+          closeModal={() => setShowAnnouncementModal(false)}
+        />
       )}
     </DashboardLayout>
   );
 }
 
-function AdminOverview({ statistics, announcements, requests, changeSection }) {
+function AdminOverview({
+  announcements,
+  requests,
+  changeSection,
+  setShowAnnouncementModal,
+}) {
   return (
-    <>
-      
+    <section className="dashboard-grid">
+      <article
+        className="dashboard-card"
+        style={{ cursor: "pointer" }}
+        
+      >
+        <div className="card-heading">
+          <h2>Announcements</h2>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => setShowAnnouncementModal(true)}
+          >
+            <Plus size={18} />
+            Create
+          </button>
+        </div>
 
-      <section className="dashboard-grid">
-        <article className="dashboard-card">
-          <div className="card-heading">
-            <h2>Latest Announcements</h2>
+        <h3>{announcements.length}</h3>
 
-            <button
-              className="text-button"
-              onClick={() => changeSection("announcements")}
-            >
-              View All
-            </button>
-          </div>
+        <p>Published announcements</p>
+      </article>
 
-          <p>{announcements.length} Announcements</p>
-        </article>
+      <article className="dashboard-card">
+        <div className="card-heading">
+          <h2>Service Requests</h2>
+        </div>
 
-        <article className="dashboard-card">
-          <div className="card-heading">
-            <h2>Service Requests</h2>
+        <h3>{requests.length}</h3>
+        <p>Active requests</p>
 
-            <button
-              className="text-button"
-              onClick={() => changeSection("requests")}
-            >
-              View All
-            </button>
-          </div>
+        <button
+          className="primary-button"
+          onClick={() => changeSection("requests")}
+        >
+          Open
+        </button>
+      </article>
 
-          <p>{requests.length} Requests</p>
-        </article>
-      </section>
-    </>
+      <article className="dashboard-card">
+        <div className="card-heading">
+          <h2>Enrollment</h2>
+        </div>
+
+        <button
+          className="primary-button"
+          onClick={() => changeSection("enrollment")}
+        >
+          Open
+        </button>
+      </article>
+
+      <article className="dashboard-card">
+        <div className="card-heading">
+          <h2>Reports</h2>
+        </div>
+
+        <button
+          type="button"
+          className="primary-button"
+          onClick={() => alert("Report generation coming soon.")}
+        >
+          <Download size={18} />
+          Generate Report
+        </button>
+      </article>
+    </section>
   );
 }
 
-function AdminDirectorySection() {
+function AdminDirectorySection({ changeSection }) {
   return (
     <section className="dashboard-card">
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={() => changeSection("dashboard")}
+      >
+        Back to Dashboard
+      </button>
+
       <h2>Campus Directory</h2>
 
       <p>Directory management will appear here.</p>
@@ -292,15 +406,24 @@ function AdminDirectorySection() {
   );
 }
 
-function AdminEnrollmentSection({ enrollmentOverview }) {
+function AdminEnrollmentSection({ enrollmentOverview, changeSection }) {
   return (
     <section className="dashboard-card">
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={() => changeSection("dashboard")}
+      >
+        Back to Dashboard
+      </button>
+
       <h2>Enrollment Overview</h2>
 
       <div className="admin-enrollment-grid">
         {Object.entries(enrollmentOverview || {}).map(([key, value]) => (
           <div key={key} className="dashboard-card">
             <h3>{key}</h3>
+
             <p>{String(value)}</p>
           </div>
         ))}
@@ -309,17 +432,28 @@ function AdminEnrollmentSection({ enrollmentOverview }) {
   );
 }
 
-function AdminReportsSection({ reports }) {
+function AdminReportsSection({ reports, changeSection }) {
   return (
     <section className="dashboard-card">
-      <div className="card-heading">
-        <h2>Reports</h2>
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={() => changeSection("dashboard")}
+      >
+        Back to Dashboard
+      </button>
 
-        <button className="primary-button">
-          <Download size={18} />
-          Generate
-        </button>
-      </div>
+      <h2>Reports</h2>
+      <button
+        type="button"
+        className="primary-button"
+        onClick={() => {
+          alert("Report generation coming soon.");
+        }}
+      >
+        <Download size={18} />
+        Generate Report
+      </button>
 
       <div className="table-container">
         <table>
@@ -346,9 +480,17 @@ function AdminReportsSection({ reports }) {
   );
 }
 
-function AdminAnnouncementsSection({ announcements }) {
+function AdminAnnouncementsSection({ announcements, changeSection }) {
   return (
     <section className="dashboard-card">
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={() => changeSection("dashboard")}
+      >
+        Back to Dashboard
+      </button>
+
       <h2>Announcements</h2>
 
       <div className="announcement-list">
@@ -369,9 +511,17 @@ function AdminAnnouncementsSection({ announcements }) {
   );
 }
 
-function AdminRequestsSection({ requests }) {
+function AdminRequestsSection({ requests, changeSection }) {
   return (
     <section className="dashboard-card">
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={() => changeSection("dashboard")}
+      >
+        Back to Dashboard
+      </button>
+
       <h2>Service Requests</h2>
 
       <div className="table-container">
@@ -389,6 +539,8 @@ function AdminRequestsSection({ requests }) {
             {Array.isArray(requests) &&
               requests.map((request) => (
                 <tr key={request.id}>
+                  <td>{request.id || "N/A"}</td>
+
                   <td>{request.service || request.request_type || "N/A"}</td>
 
                   <td>{request.submittedBy || request.user || "N/A"}</td>
@@ -400,6 +552,72 @@ function AdminRequestsSection({ requests }) {
         </table>
       </div>
     </section>
+  );
+}
+
+function AnnouncementModal({
+  form,
+  setForm,
+  submitAnnouncement,
+  submitting,
+  closeModal,
+}) {
+  return (
+    <div className="modal-overlay">
+      <div className="request-modal">
+        <div className="modal-heading">
+          <h2>New Announcement</h2>
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={closeModal}
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="form-group">
+          <label>Title</label>
+
+          <input
+            type="text"
+            value={form.title}
+            onChange={(event) =>
+              setForm((previous) => ({
+                ...previous,
+                title: event.target.value,
+              }))
+            }
+            placeholder="Announcement title"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Description</label>
+
+          <textarea
+            value={form.description}
+            onChange={(event) =>
+              setForm((previous) => ({
+                ...previous,
+                description: event.target.value,
+              }))
+            }
+            placeholder="Announcement details"
+          />
+        </div>
+
+        <button
+          type="button"
+          className="primary-button"
+          disabled={submitting}
+          onClick={submitAnnouncement}
+        >
+          {submitting ? "Publishing..." : "Publish"}
+        </button>
+      </div>
+    </div>
   );
 }
 

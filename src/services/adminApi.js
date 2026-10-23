@@ -29,7 +29,7 @@ export function getAdminStatistics() {
 }
 
 export function getEnrollmentOverview() {
-  return apiRequest("/admin/enrollment-overview.php");
+  return apiRequest("/admin/enrollment.php");
 }
 
 export function getAdminAnnouncements() {
@@ -44,12 +44,6 @@ export function getReports() {
   return apiRequest("/admin/reports.php");
 }
 
-export function createAnnouncement(announcementData) {
-  return apiRequest("/admin/announcements.php", {
-    method: "POST",
-    body: JSON.stringify(announcementData),
-  });
-}
 
 export function deleteRequest(requestId) {
   return apiRequest("api/admin/requests/delete.php", {
@@ -59,4 +53,18 @@ export function deleteRequest(requestId) {
       request_id: requestId,
     }),
   });
+}
+
+export function createAnnouncement(
+  announcementData,
+) {
+  return apiRequest(
+    "/admin/announcements/create.php",
+    {
+      method: "POST",
+      body: JSON.stringify(
+        announcementData,
+      ),
+    }
+  );
 }
