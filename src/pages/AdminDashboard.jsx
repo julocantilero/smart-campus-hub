@@ -237,7 +237,7 @@ function AdminDashboard() {
 
           <p>{getSectionDescription(currentSection)}</p>
         </div>
-    
+
         <div className="heading-actions">
           <button
             type="button"
@@ -249,8 +249,6 @@ function AdminDashboard() {
             <Download size={19} />
             View Reports
           </button>
-
-          
         </div>
       </section>
 
@@ -319,11 +317,7 @@ function AdminOverview({
 }) {
   return (
     <section className="dashboard-grid">
-      <article
-        className="dashboard-card"
-        style={{ cursor: "pointer" }}
-        
-      >
+      <article className="dashboard-card" style={{ cursor: "pointer" }}>
         <div className="card-heading">
           <h2>Announcements</h2>
           <button

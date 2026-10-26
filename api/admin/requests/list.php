@@ -9,4 +9,4 @@ echo json_encode([
     "message" => "requests endpoint working"
 ]);
 
-exit;
+exit; 
