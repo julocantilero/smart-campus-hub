@@ -46,7 +46,7 @@ export function getFacultyWorkload() {
 }
 
 export function getFacultyClasses() {
-  return apiRequest("/faculty/classes.php");
+  return apiRequest("api/faculty/classes.php");
 }
 
 export function getFacultyAdvisees() {

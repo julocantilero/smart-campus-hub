@@ -1,13 +1,15 @@
 <?php
 
-require_once "../config/cors.php";
-require_once "../config/database.php";
+require_once "../../config/cors.php";
+require_once "../../config/database.php";
 
-$result = $conn->query(
-    "SELECT *
-     FROM announcements
-     ORDER BY created_at DESC"
-);
+header("Content-Type: application/json");
+
+$result = $conn->query("
+    SELECT *
+    FROM announcements
+    ORDER BY created_at DESC
+");
 
 $announcements = [];
 

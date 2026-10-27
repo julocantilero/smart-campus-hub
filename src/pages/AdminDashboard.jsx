@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 
 import { Download, Plus } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
-
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   getAdminAnnouncements,
   getAdminProfile,
@@ -13,7 +12,10 @@ import {
   getEnrollmentOverview,
   getReports,
   createAnnouncement,
+  updateRequestStatus,
 } from "../services/adminApi.js";
+
+import { getSession } from "../services/authApi";
 
 function AdminDashboard() {
   const [admin, setAdmin] = useState({});
@@ -22,24 +24,34 @@ function AdminDashboard() {
   const [announcements, setAnnouncements] = useState([]);
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [apiConnected, setApiConnected] = useState(false);
-
   const [pageMessage, setPageMessage] = useState("");
-
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementForm, setAnnouncementForm] = useState({
     title: "",
     description: "",
   });
-
   const [announcementSubmitting, setAnnouncementSubmitting] = useState(false);
-
   useEffect(() => {
     loadAdminDashboard();
   }, []);
+  const navigate = useNavigate();
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  async function checkSession() {
+    const session = await getSession();
+
+    if (!session.logged_in) {
+      navigate("/");
+    }
+
+    if (session.role !== "admin") {
+      navigate("/");
+    }
+  }
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -119,6 +131,25 @@ function AdminDashboard() {
       alert(error.message || "Failed to create announcement.");
     } finally {
       setAnnouncementSubmitting(false);
+    }
+  }
+
+  async function handleRequestStatusUpdate(requestId, status) {
+    try {
+      await updateRequestStatus(requestId, status);
+
+      setRequests((previousRequests) =>
+        previousRequests.map((request) =>
+          request.id === requestId
+            ? {
+                ...request,
+                status,
+              }
+            : request,
+        ),
+      );
+    } catch (error) {
+      alert(error.message || "Failed to update request status.");
     }
   }
 
@@ -293,6 +324,7 @@ function AdminDashboard() {
         <AdminRequestsSection
           requests={requests}
           changeSection={changeSection}
+          handleRequestStatusUpdate={handleRequestStatusUpdate}
         />
       )}
 
@@ -492,7 +524,7 @@ function AdminAnnouncementsSection({ announcements, changeSection }) {
           announcements.map((announcement) => (
             <div key={announcement.id} className="announcement-item">
               <h3>{announcement.title || "Untitled Announcement"}</h3>
-
+              <small>{announcement.created_at}</small>
               <p>
                 {announcement.description ||
                   announcement.content ||
@@ -505,7 +537,11 @@ function AdminAnnouncementsSection({ announcements, changeSection }) {
   );
 }
 
-function AdminRequestsSection({ requests, changeSection }) {
+function AdminRequestsSection({
+  requests,
+  changeSection,
+  handleRequestStatusUpdate,
+}) {
   return (
     <section className="dashboard-card">
       <button
@@ -526,6 +562,7 @@ function AdminRequestsSection({ requests, changeSection }) {
               <th>Service</th>
               <th>User</th>
               <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
 
@@ -540,6 +577,30 @@ function AdminRequestsSection({ requests, changeSection }) {
                   <td>{request.submittedBy || request.user || "N/A"}</td>
 
                   <td>{request.status || "Pending"}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() =>
+                        handleRequestStatusUpdate(request.id, "Approved")
+                      }
+                    >
+                      Approve
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        handleRequestStatusUpdate(request.id, "Rejected")
+                      }
+                      style={{
+                        marginLeft: "8px",
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </td>
                 </tr>
               ))}
           </tbody>

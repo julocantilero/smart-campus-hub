@@ -33,7 +33,7 @@ export function getEnrollmentOverview() {
 }
 
 export function getAdminAnnouncements() {
-  return apiRequest("/admin/announcements.php");
+  return apiRequest("/admin/announcements/list.php");
 }
 
 export function getAdminRequests() {
@@ -65,6 +65,19 @@ export function createAnnouncement(
       body: JSON.stringify(
         announcementData,
       ),
+    }
+  );
+}
+
+export function updateRequestStatus(id, status) {
+  return apiRequest(
+    "/admin/requests/update.php",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        id,
+        status,
+      }),
     }
   );
 }

@@ -1,10 +1,6 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
   Bell,
@@ -64,12 +60,7 @@ const emptyWorkload = {
   maximumUnits: 24,
 };
 
-const announcementCategories = [
-  "All",
-  "Academic",
-  "Enrollment",
-  "Campus",
-];
+const announcementCategories = ["All", "Academic", "Enrollment", "Campus"];
 
 /*
 |--------------------------------------------------------------------------
@@ -78,54 +69,39 @@ const announcementCategories = [
 */
 
 function FacultyDashboard() {
-  const [searchParams, setSearchParams] =
-    useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const currentSection =
-    searchParams.get("section") || "dashboard";
+  const currentSection = searchParams.get("section") || "dashboard";
 
-  const [faculty, setFaculty] =
-    useState(emptyFaculty);
+  const [faculty, setFaculty] = useState(emptyFaculty);
 
-  const [workload, setWorkload] =
-    useState(emptyWorkload);
+  const [workload, setWorkload] = useState(emptyWorkload);
 
   const [classes, setClasses] = useState([]);
   const [advisees, setAdvisees] = useState([]);
-  const [announcements, setAnnouncements] =
-    useState([]);
+  const [announcements, setAnnouncements] = useState([]);
 
-  const [directoryEntries, setDirectoryEntries] =
-    useState([]);
+  const [directoryEntries, setDirectoryEntries] = useState([]);
 
   const [requests, setRequests] = useState([]);
 
-  const [directorySearch, setDirectorySearch] =
-    useState("");
+  const [directorySearch, setDirectorySearch] = useState("");
 
-  const [classSearch, setClassSearch] =
-    useState("");
+  const [classSearch, setClassSearch] = useState("");
 
-  const [adviseeSearch, setAdviseeSearch] =
-    useState("");
+  const [adviseeSearch, setAdviseeSearch] = useState("");
 
-  const [adviseeStatusFilter, setAdviseeStatusFilter] =
-    useState("All");
+  const [adviseeStatusFilter, setAdviseeStatusFilter] = useState("All");
 
-  const [announcementFilter, setAnnouncementFilter] =
-    useState("All");
+  const [announcementFilter, setAnnouncementFilter] = useState("All");
 
-  const [showRequestModal, setShowRequestModal] =
-    useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
 
-  const [requestSubmitting, setRequestSubmitting] =
-    useState(false);
+  const [requestSubmitting, setRequestSubmitting] = useState(false);
 
-  const [requestDeletingId, setRequestDeletingId] =
-    useState(null);
+  const [requestDeletingId, setRequestDeletingId] = useState(null);
 
-  const [requestError, setRequestError] =
-    useState("");
+  const [requestError, setRequestError] = useState("");
 
   const [requestForm, setRequestForm] = useState({
     service: "Classroom Concern",
@@ -134,11 +110,27 @@ function FacultyDashboard() {
 
   const [loading, setLoading] = useState(true);
 
-  const [apiConnected, setApiConnected] =
-    useState(false);
+  const [apiConnected, setApiConnected] = useState(false);
 
-  const [pageMessage, setPageMessage] =
-    useState("");
+  const [pageMessage, setPageMessage] = useState("");
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  async function checkSession() {
+    const session = await getSession();
+
+    if (!session.logged_in) {
+      navigate("/");
+    }
+
+    if (session.role !== "faculty") {
+      navigate("/");
+    }
+  }
 
   /*
   |--------------------------------------------------------------------------
@@ -179,126 +171,73 @@ function FacultyDashboard() {
     if (profileResult.status === "fulfilled") {
       successfulRequests += 1;
 
-      const profileData =
-        extractData(
-          profileResult.value,
-          "faculty"
-        );
+      const profileData = extractData(profileResult.value, "faculty");
 
-      setFaculty(
-        normalizeFaculty(profileData)
-      );
+      setFaculty(normalizeFaculty(profileData));
     }
 
     if (workloadResult.status === "fulfilled") {
       successfulRequests += 1;
 
-      const workloadData =
-        extractData(
-          workloadResult.value,
-          "workload"
-        );
+      const workloadData = extractData(workloadResult.value, "workload");
 
-      setWorkload(
-        normalizeWorkload(workloadData)
-      );
+      setWorkload(normalizeWorkload(workloadData));
     }
 
     if (classesResult.status === "fulfilled") {
       successfulRequests += 1;
 
-      const classData =
-        extractData(
-          classesResult.value,
-          "classes"
-        );
+      const classData = extractData(classesResult.value, "classes");
 
-      setClasses(
-        Array.isArray(classData)
-          ? classData
-          : []
-      );
+      setClasses(Array.isArray(classData) ? classData : []);
     }
 
     if (adviseesResult.status === "fulfilled") {
       successfulRequests += 1;
 
-      const adviseeData =
-        extractData(
-          adviseesResult.value,
-          "advisees"
-        );
+      const adviseeData = extractData(adviseesResult.value, "advisees");
 
-      setAdvisees(
-        Array.isArray(adviseeData)
-          ? adviseeData
-          : []
-      );
+      setAdvisees(Array.isArray(adviseeData) ? adviseeData : []);
     }
 
-    if (
-      announcementsResult.status === "fulfilled"
-    ) {
+    if (announcementsResult.status === "fulfilled") {
       successfulRequests += 1;
 
-      const announcementData =
-        extractData(
-          announcementsResult.value,
-          "announcements"
-        );
-
-      setAnnouncements(
-        Array.isArray(announcementData)
-          ? announcementData
-          : []
+      const announcementData = extractData(
+        announcementsResult.value,
+        "announcements",
       );
+
+      setAnnouncements(Array.isArray(announcementData) ? announcementData : []);
     }
 
     if (directoryResult.status === "fulfilled") {
       successfulRequests += 1;
 
-      const directoryData =
-        extractData(
-          directoryResult.value,
-          "directory"
-        );
+      const directoryData = extractData(directoryResult.value, "directory");
 
-      setDirectoryEntries(
-        Array.isArray(directoryData)
-          ? directoryData
-          : []
-      );
+      setDirectoryEntries(Array.isArray(directoryData) ? directoryData : []);
     }
 
     if (requestsResult.status === "fulfilled") {
       successfulRequests += 1;
 
-      const requestData =
-        extractData(
-          requestsResult.value,
-          "requests"
-        );
+      const requestData = extractData(requestsResult.value, "requests");
 
-      setRequests(
-        Array.isArray(requestData)
-          ? requestData
-          : []
-      );
+      setRequests(Array.isArray(requestData) ? requestData : []);
     }
 
     if (successfulRequests === 0) {
       setApiConnected(false);
 
       setPageMessage(
-        "The PHP API is not connected yet. Faculty information will appear after the PHP endpoints are available."
+        "The PHP API is not connected yet. Faculty information will appear after the PHP endpoints are available.",
       );
     } else {
       setApiConnected(true);
 
       if (successfulRequests < 7) {
-        setPageMessage(
-          "Some faculty information could not be loaded."
-        );
+        setPageMessage("Some faculty information could not be loaded.");
       }
     }
 
@@ -319,22 +258,15 @@ function FacultyDashboard() {
 
   const facultyFullName =
     faculty.fullName ||
-    [
-      faculty.firstName,
-      faculty.middleName,
-      faculty.lastName,
-    ]
+    [faculty.firstName, faculty.middleName, faculty.lastName]
       .filter(Boolean)
       .join(" ") ||
     "Not available";
 
-  const academicYear =
-    faculty.academicYear ||
-    "Not available";
+  const academicYear = faculty.academicYear || "Not available";
 
   const openRequestCount = requests.filter(
-    (request) =>
-      getRequestStatus(request) !== "Completed"
+    (request) => getRequestStatus(request) !== "Completed",
   ).length;
 
   const statistics = [
@@ -348,10 +280,7 @@ function FacultyDashboard() {
     {
       title: "Assigned Classes",
       value: classes.length,
-      description:
-        classes.length === 1
-          ? "Active class"
-          : "Active classes",
+      description: classes.length === 1 ? "Active class" : "Active classes",
       icon: GraduationCap,
       color: "purple",
     },
@@ -359,27 +288,21 @@ function FacultyDashboard() {
       title: "Student Advisees",
       value: advisees.length,
       description:
-        advisees.length === 1
-          ? "Assigned advisee"
-          : "Assigned advisees",
+        advisees.length === 1 ? "Assigned advisee" : "Assigned advisees",
       icon: Users,
       color: "green",
     },
     {
       title: "Service Requests",
       value: openRequestCount,
-      description:
-        openRequestCount === 1
-          ? "Open request"
-          : "Open requests",
+      description: openRequestCount === 1 ? "Open request" : "Open requests",
       icon: ClipboardList,
       color: "orange",
     },
   ];
 
   const filteredDirectory = useMemo(() => {
-    const searchTerm =
-      directorySearch.trim().toLowerCase();
+    const searchTerm = directorySearch.trim().toLowerCase();
 
     if (!searchTerm) {
       return directoryEntries;
@@ -404,8 +327,7 @@ function FacultyDashboard() {
   }, [directoryEntries, directorySearch]);
 
   const filteredClasses = useMemo(() => {
-    const searchTerm =
-      classSearch.trim().toLowerCase();
+    const searchTerm = classSearch.trim().toLowerCase();
 
     if (!searchTerm) {
       return classes;
@@ -431,8 +353,7 @@ function FacultyDashboard() {
   }, [classes, classSearch]);
 
   const filteredAdvisees = useMemo(() => {
-    const searchTerm =
-      adviseeSearch.trim().toLowerCase();
+    const searchTerm = adviseeSearch.trim().toLowerCase();
 
     return advisees.filter((advisee) => {
       const searchableText = [
@@ -449,25 +370,16 @@ function FacultyDashboard() {
         .join(" ")
         .toLowerCase();
 
-      const matchesSearch =
-        searchableText.includes(searchTerm);
+      const matchesSearch = searchableText.includes(searchTerm);
 
-      const status =
-        advisee.status ||
-        advisee.advising_status ||
-        "Regular";
+      const status = advisee.status || advisee.advising_status || "Regular";
 
       const matchesStatus =
-        adviseeStatusFilter === "All" ||
-        status === adviseeStatusFilter;
+        adviseeStatusFilter === "All" || status === adviseeStatusFilter;
 
       return matchesSearch && matchesStatus;
     });
-  }, [
-    advisees,
-    adviseeSearch,
-    adviseeStatusFilter,
-  ]);
+  }, [advisees, adviseeSearch, adviseeStatusFilter]);
 
   const filteredAnnouncements = useMemo(() => {
     if (announcementFilter === "All") {
@@ -475,9 +387,7 @@ function FacultyDashboard() {
     }
 
     return announcements.filter(
-      (announcement) =>
-        announcement.category ===
-        announcementFilter
+      (announcement) => announcement.category === announcementFilter,
     );
   }, [announcements, announcementFilter]);
 
@@ -530,20 +440,17 @@ function FacultyDashboard() {
   async function submitRequest(event) {
     event.preventDefault();
 
-    const cleanDetails =
-      requestForm.details.trim();
+    const cleanDetails = requestForm.details.trim();
 
     if (!requestForm.service) {
-      setRequestError(
-        "Please select a service type."
-      );
+      setRequestError("Please select a service type.");
 
       return;
     }
 
     if (cleanDetails.length < 10) {
       setRequestError(
-        "Please enter at least 10 characters describing your request."
+        "Please enter at least 10 characters describing your request.",
       );
 
       return;
@@ -553,30 +460,18 @@ function FacultyDashboard() {
     setRequestError("");
 
     try {
-      const response =
-        await createFacultyRequest({
-          service: requestForm.service,
-          details: cleanDetails,
-        });
+      const response = await createFacultyRequest({
+        service: requestForm.service,
+        details: cleanDetails,
+      });
 
-      const newRequest =
-        response?.data ||
-        response?.request ||
-        response;
+      const newRequest = response?.data || response?.request || response;
 
-      if (
-        !newRequest ||
-        typeof newRequest !== "object"
-      ) {
-        throw new Error(
-          "The PHP endpoint did not return the created request."
-        );
+      if (!newRequest || typeof newRequest !== "object") {
+        throw new Error("The PHP endpoint did not return the created request.");
       }
 
-      setRequests((previousRequests) => [
-        newRequest,
-        ...previousRequests,
-      ]);
+      setRequests((previousRequests) => [newRequest, ...previousRequests]);
 
       setRequestForm({
         service: "Classroom Concern",
@@ -590,8 +485,7 @@ function FacultyDashboard() {
       });
     } catch (error) {
       setRequestError(
-        error.message ||
-          "The faculty request could not be submitted."
+        error.message || "The faculty request could not be submitted.",
       );
     } finally {
       setRequestSubmitting(false);
@@ -603,9 +497,7 @@ function FacultyDashboard() {
       return;
     }
 
-    const shouldDelete = window.confirm(
-      "Remove this faculty request?"
-    );
+    const shouldDelete = window.confirm("Remove this faculty request?");
 
     if (!shouldDelete) {
       return;
@@ -619,14 +511,12 @@ function FacultyDashboard() {
 
       setRequests((previousRequests) =>
         previousRequests.filter(
-          (request) =>
-            getRequestId(request) !== requestId
-        )
+          (request) => getRequestId(request) !== requestId,
+        ),
       );
     } catch (error) {
       setPageMessage(
-        error.message ||
-          "The faculty request could not be deleted."
+        error.message || "The faculty request could not be deleted.",
       );
     } finally {
       setRequestDeletingId(null);
@@ -643,9 +533,7 @@ function FacultyDashboard() {
     <DashboardLayout role="faculty">
       <section className="page-heading">
         <div>
-          <p className="academic-year">
-            Academic Year {academicYear}
-          </p>
+          <p className="academic-year">Academic Year {academicYear}</p>
 
           <h1>
             {currentSection === "dashboard"
@@ -653,9 +541,7 @@ function FacultyDashboard() {
               : getSectionTitle(currentSection)}
           </h1>
 
-          <p>
-            {getSectionDescription(currentSection)}
-          </p>
+          <p>{getSectionDescription(currentSection)}</p>
         </div>
 
         <button
@@ -676,11 +562,7 @@ function FacultyDashboard() {
               : "dashboard-api-notice api-not-connected"
           }
         >
-          <strong>
-            {apiConnected
-              ? "Notice"
-              : "PHP API not connected"}
-          </strong>
+          <strong>{apiConnected ? "Notice" : "PHP API not connected"}</strong>
 
           <p>{pageMessage}</p>
         </div>
@@ -734,15 +616,12 @@ function FacultyDashboard() {
               search={adviseeSearch}
               setSearch={setAdviseeSearch}
               statusFilter={adviseeStatusFilter}
-              setStatusFilter={
-                setAdviseeStatusFilter
-              }
+              setStatusFilter={setAdviseeStatusFilter}
               advisees={filteredAdvisees}
             />
           )}
 
-          {currentSection ===
-            "announcements" && (
+          {currentSection === "announcements" && (
             <AnnouncementsSection
               filter={announcementFilter}
               setFilter={setAnnouncementFilter}
@@ -796,10 +675,7 @@ function FacultyOverview({
     <>
       <section className="stats-grid">
         {statistics.map((statistic) => (
-          <StatCard
-            key={statistic.title}
-            {...statistic}
-          />
+          <StatCard key={statistic.title} {...statistic} />
         ))}
       </section>
 
@@ -809,17 +685,13 @@ function FacultyOverview({
             <div>
               <h2>Faculty Workload</h2>
 
-              <p>
-                Current teaching load distribution
-              </p>
+              <p>Current teaching load distribution</p>
             </div>
 
             <button
               type="button"
               className="text-button"
-              onClick={() =>
-                changeSection("workload")
-              }
+              onClick={() => changeSection("workload")}
             >
               View details
             </button>
@@ -839,32 +711,22 @@ function FacultyOverview({
             <button
               type="button"
               className="text-button"
-              onClick={() =>
-                changeSection("announcements")
-              }
+              onClick={() => changeSection("announcements")}
             >
               View all
             </button>
           </div>
 
           {announcements.length === 0 ? (
-            <CompactEmptyState
-              message="No announcements available."
-            />
+            <CompactEmptyState message="No announcements available." />
           ) : (
             <div className="announcement-list">
-              {announcements
-                .slice(0, 3)
-                .map((announcement, index) => (
-                  <AnnouncementCard
-                    key={
-                      announcement.id ||
-                      announcement.announcement_id ||
-                      index
-                    }
-                    announcement={announcement}
-                  />
-                ))}
+              {announcements.slice(0, 3).map((announcement, index) => (
+                <AnnouncementCard
+                  key={announcement.id || announcement.announcement_id || index}
+                  announcement={announcement}
+                />
+              ))}
             </div>
           )}
         </article>
@@ -875,25 +737,19 @@ function FacultyOverview({
           <div>
             <h2>Assigned Classes</h2>
 
-            <p>
-              Current faculty teaching assignments
-            </p>
+            <p>Current faculty teaching assignments</p>
           </div>
 
           <button
             type="button"
             className="text-button"
-            onClick={() =>
-              changeSection("classes")
-            }
+            onClick={() => changeSection("classes")}
           >
             View all classes
           </button>
         </div>
 
-        <ClassesTable
-          classes={classes.slice(0, 3)}
-        />
+        <ClassesTable classes={classes.slice(0, 3)} />
       </section>
 
       <section className="dashboard-card full-width-card">
@@ -901,17 +757,13 @@ function FacultyOverview({
           <div>
             <h2>Recent Service Requests</h2>
 
-            <p>
-              Recently submitted faculty requests
-            </p>
+            <p>Recently submitted faculty requests</p>
           </div>
 
           <button
             type="button"
             className="text-button"
-            onClick={() =>
-              changeSection("requests")
-            }
+            onClick={() => changeSection("requests")}
           >
             View all
           </button>
@@ -925,10 +777,7 @@ function FacultyOverview({
             onClick={openRequestModal}
           />
         ) : (
-          <RequestsTable
-            requests={requests.slice(0, 3)}
-            showActions={false}
-          />
+          <RequestsTable requests={requests.slice(0, 3)} showActions={false} />
         )}
       </section>
     </>
@@ -941,61 +790,39 @@ function FacultyOverview({
 |--------------------------------------------------------------------------
 */
 
-function FacultyInformation({
-  faculty,
-  facultyFullName,
-}) {
+function FacultyInformation({ faculty, facultyFullName }) {
   return (
     <div className="information-list">
       <InformationRow
         label="Employee number"
         value={
-          faculty.employeeNumber ||
-          faculty.employee_number ||
-          "Not available"
+          faculty.employeeNumber || faculty.employee_number || "Not available"
         }
       />
 
       <InformationRow
         label="Faculty name"
-        value={
-          facultyFullName || "Not available"
-        }
+        value={facultyFullName || "Not available"}
       />
 
       <InformationRow
         label="Department"
-        value={
-          faculty.department ||
-          faculty.department_name ||
-          "Not available"
-        }
+        value={faculty.department || faculty.department_name || "Not available"}
       />
 
       <InformationRow
         label="Position"
-        value={
-          faculty.position ||
-          faculty.designation ||
-          "Not available"
-        }
+        value={faculty.position || faculty.designation || "Not available"}
       />
 
       <InformationRow
         label="Semester"
-        value={
-          faculty.semester ||
-          "Not available"
-        }
+        value={faculty.semester || "Not available"}
       />
 
       <InformationRow
         label="Academic year"
-        value={
-          faculty.academicYear ||
-          faculty.academic_year ||
-          "Not available"
-        }
+        value={faculty.academicYear || faculty.academic_year || "Not available"}
       />
     </div>
   );
@@ -1017,28 +844,18 @@ function InformationRow({ label, value }) {
 */
 
 function WorkloadSummary({ workload }) {
-  const maximumUnits =
-    Number(workload.maximumUnits) || 24;
+  const maximumUnits = Number(workload.maximumUnits) || 24;
 
-  const lectureUnits =
-    Number(workload.lectureUnits) || 0;
+  const lectureUnits = Number(workload.lectureUnits) || 0;
 
-  const laboratoryUnits =
-    Number(workload.laboratoryUnits) || 0;
+  const laboratoryUnits = Number(workload.laboratoryUnits) || 0;
 
   const totalUnits =
-    Number(workload.totalUnits) ||
-    lectureUnits + laboratoryUnits;
+    Number(workload.totalUnits) || lectureUnits + laboratoryUnits;
 
-  const lectureWidth = Math.min(
-    (lectureUnits / maximumUnits) * 100,
-    100
-  );
+  const lectureWidth = Math.min((lectureUnits / maximumUnits) * 100, 100);
 
-  const laboratoryWidth = Math.min(
-    (laboratoryUnits / maximumUnits) * 100,
-    100
-  );
+  const laboratoryWidth = Math.min((laboratoryUnits / maximumUnits) * 100, 100);
 
   return (
     <>
@@ -1047,9 +864,7 @@ function WorkloadSummary({ workload }) {
           <div className="progress-label">
             <span>Lecture units</span>
 
-            <strong>
-              {lectureUnits} units
-            </strong>
+            <strong>{lectureUnits} units</strong>
           </div>
 
           <div className="progress-track">
@@ -1066,9 +881,7 @@ function WorkloadSummary({ workload }) {
           <div className="progress-label">
             <span>Laboratory units</span>
 
-            <strong>
-              {laboratoryUnits} units
-            </strong>
+            <strong>{laboratoryUnits} units</strong>
           </div>
 
           <div className="progress-track">
@@ -1085,20 +898,13 @@ function WorkloadSummary({ workload }) {
       <div className="workload-total">
         <span>Total teaching load</span>
 
-        <strong>
-          {totalUnits} units
-        </strong>
+        <strong>{totalUnits} units</strong>
       </div>
     </>
   );
 }
 
-function WorkloadSection({
-  faculty,
-  facultyFullName,
-  workload,
-  classes,
-}) {
+function WorkloadSection({ faculty, facultyFullName, workload, classes }) {
   return (
     <>
       <section className="dashboard-grid faculty-content-grid">
@@ -1107,9 +913,7 @@ function WorkloadSection({
             <div>
               <h2>Faculty Information</h2>
 
-              <p>
-                Current faculty assignment record
-              </p>
+              <p>Current faculty assignment record</p>
             </div>
 
             <StatusBadge status="Active" />
@@ -1126,9 +930,7 @@ function WorkloadSection({
             <div>
               <h2>Teaching Load</h2>
 
-              <p>
-                Lecture and laboratory distribution
-              </p>
+              <p>Lecture and laboratory distribution</p>
             </div>
           </div>
 
@@ -1141,9 +943,7 @@ function WorkloadSection({
           <div>
             <h2>Workload Breakdown</h2>
 
-            <p>
-              Classes included in the current workload
-            </p>
+            <p>Classes included in the current workload</p>
           </div>
 
           <strong className="faculty-total-units">
@@ -1159,9 +959,8 @@ function WorkloadSection({
           <BookOpen size={23} />
 
           <p>
-            This module displays faculty workload
-            information from PHP. It does not process
-            payroll or official compensation records.
+            This module displays faculty workload information from PHP. It does
+            not process payroll or official compensation records.
           </p>
         </div>
       </section>
@@ -1175,27 +974,18 @@ function WorkloadSection({
 |--------------------------------------------------------------------------
 */
 
-function DirectorySection({
-  search,
-  setSearch,
-  entries,
-}) {
+function DirectorySection({ search, setSearch, entries }) {
   return (
     <section className="dashboard-card full-width-card">
       <div className="card-heading">
         <div>
           <h2>Faculty Directory</h2>
 
-          <p>
-            Search academic departments and offices
-          </p>
+          <p>Search academic departments and offices</p>
         </div>
 
         <span className="faculty-result-count">
-          {entries.length}{" "}
-          {entries.length === 1
-            ? "result"
-            : "results"}
+          {entries.length} {entries.length === 1 ? "result" : "results"}
         </span>
       </div>
 
@@ -1205,9 +995,7 @@ function DirectorySection({
         <input
           type="search"
           value={search}
-          onChange={(event) =>
-            setSearch(event.target.value)
-          }
+          onChange={(event) => setSearch(event.target.value)}
           placeholder="Search directory"
         />
       </div>
@@ -1222,11 +1010,7 @@ function DirectorySection({
           {entries.map((entry, index) => (
             <article
               className="faculty-directory-card"
-              key={
-                entry.id ||
-                entry.directory_id ||
-                index
-              }
+              key={entry.id || entry.directory_id || index}
             >
               <div className="faculty-directory-icon">
                 <Users size={22} />
@@ -1234,15 +1018,10 @@ function DirectorySection({
 
               <div>
                 <span className="faculty-directory-type">
-                  {entry.type ||
-                    "Campus Office"}
+                  {entry.type || "Campus Office"}
                 </span>
 
-                <h3>
-                  {entry.name ||
-                    entry.office_name ||
-                    "Unnamed Office"}
-                </h3>
+                <h3>{entry.name || entry.office_name || "Unnamed Office"}</h3>
 
                 <p>
                   {entry.service ||
@@ -1280,36 +1059,19 @@ function DirectorySection({
 |--------------------------------------------------------------------------
 */
 
-function ClassesSection({
-  search,
-  setSearch,
-  classes,
-}) {
+function ClassesSection({ search, setSearch, classes }) {
   const totalStudents = classes.reduce(
     (total, classItem) =>
-      total +
-      Number(
-        classItem.students ||
-          classItem.student_count ||
-          0
-      ),
-    0
+      total + Number(classItem.students || classItem.student_count || 0),
+    0,
   );
 
   return (
     <>
       <section className="faculty-class-summary-grid">
-        <SummaryCard
-          icon={BookOpen}
-          label="Classes"
-          value={classes.length}
-        />
+        <SummaryCard icon={BookOpen} label="Classes" value={classes.length} />
 
-        <SummaryCard
-          icon={Users}
-          label="Students"
-          value={totalStudents}
-        />
+        <SummaryCard icon={Users} label="Students" value={totalStudents} />
 
         <SummaryCard
           icon={GraduationCap}
@@ -1317,9 +1079,7 @@ function ClassesSection({
           value={
             classes.filter(
               (classItem) =>
-                String(
-                  classItem.type || ""
-                ).toLowerCase() === "lecture"
+                String(classItem.type || "").toLowerCase() === "lecture",
             ).length
           }
         />
@@ -1330,10 +1090,7 @@ function ClassesSection({
           value={
             classes.filter(
               (classItem) =>
-                String(
-                  classItem.type || ""
-                ).toLowerCase() ===
-                "laboratory"
+                String(classItem.type || "").toLowerCase() === "laboratory",
             ).length
           }
         />
@@ -1344,16 +1101,11 @@ function ClassesSection({
           <div>
             <h2>Assigned Classes</h2>
 
-            <p>
-              Search current teaching assignments
-            </p>
+            <p>Search current teaching assignments</p>
           </div>
 
           <span className="faculty-result-count">
-            {classes.length}{" "}
-            {classes.length === 1
-              ? "result"
-              : "results"}
+            {classes.length} {classes.length === 1 ? "result" : "results"}
           </span>
         </div>
 
@@ -1363,9 +1115,7 @@ function ClassesSection({
           <input
             type="search"
             value={search}
-            onChange={(event) =>
-              setSearch(event.target.value)
-            }
+            onChange={(event) => setSearch(event.target.value)}
             placeholder="Search subject, section, schedule, or room"
           />
         </div>
@@ -1376,11 +1126,7 @@ function ClassesSection({
   );
 }
 
-function SummaryCard({
-  icon: Icon,
-  label,
-  value,
-}) {
+function SummaryCard({ icon: Icon, label, value }) {
   return (
     <article className="faculty-summary-card">
       <Icon size={23} />
@@ -1417,21 +1163,12 @@ function ClassesTable({ classes }) {
 
         <tbody>
           {classes.map((classItem, index) => {
-            const type =
-              classItem.type || "Lecture";
+            const type = classItem.type || "Lecture";
 
             return (
-              <tr
-                key={
-                  classItem.id ||
-                  classItem.class_id ||
-                  index
-                }
-              >
+              <tr key={classItem.id || classItem.class_id || index}>
                 <td>
-                  {classItem.code ||
-                    classItem.subject_code ||
-                    "Not available"}
+                  {classItem.code || classItem.subject_code || "Not available"}
                 </td>
 
                 <td>
@@ -1440,26 +1177,16 @@ function ClassesTable({ classes }) {
                     "Not available"}
                 </td>
 
-                <td>
-                  {classItem.section ||
-                    "Not available"}
-                </td>
+                <td>{classItem.section || "Not available"}</td>
 
-                <td>
-                  {classItem.schedule ||
-                    "Not available"}
-                </td>
+                <td>{classItem.schedule || "Not available"}</td>
 
-                <td>
-                  {classItem.room ||
-                    "Not available"}
-                </td>
+                <td>{classItem.room || "Not available"}</td>
 
                 <td>
                   <span
                     className={
-                      String(type).toLowerCase() ===
-                      "laboratory"
+                      String(type).toLowerCase() === "laboratory"
                         ? "faculty-type-badge faculty-laboratory"
                         : "faculty-type-badge faculty-lecture"
                     }
@@ -1468,11 +1195,7 @@ function ClassesTable({ classes }) {
                   </span>
                 </td>
 
-                <td>
-                  {classItem.students ??
-                    classItem.student_count ??
-                    0}
-                </td>
+                <td>{classItem.students ?? classItem.student_count ?? 0}</td>
               </tr>
             );
           })}
@@ -1501,16 +1224,11 @@ function AdviseesSection({
         <div>
           <h2>Student Advisees</h2>
 
-          <p>
-            Search students assigned for advising
-          </p>
+          <p>Search students assigned for advising</p>
         </div>
 
         <span className="faculty-result-count">
-          {advisees.length}{" "}
-          {advisees.length === 1
-            ? "result"
-            : "results"}
+          {advisees.length} {advisees.length === 1 ? "result" : "results"}
         </span>
       </div>
 
@@ -1521,9 +1239,7 @@ function AdviseesSection({
           <input
             type="search"
             value={search}
-            onChange={(event) =>
-              setSearch(event.target.value)
-            }
+            onChange={(event) => setSearch(event.target.value)}
             placeholder="Search student name or number"
           />
         </div>
@@ -1531,21 +1247,13 @@ function AdviseesSection({
         <select
           className="faculty-status-filter"
           value={statusFilter}
-          onChange={(event) =>
-            setStatusFilter(event.target.value)
-          }
+          onChange={(event) => setStatusFilter(event.target.value)}
         >
-          <option value="All">
-            All Statuses
-          </option>
+          <option value="All">All Statuses</option>
 
-          <option value="Regular">
-            Regular
-          </option>
+          <option value="Regular">Regular</option>
 
-          <option value="For Advising">
-            For Advising
-          </option>
+          <option value="For Advising">For Advising</option>
         </select>
       </div>
 
@@ -1570,18 +1278,10 @@ function AdviseesSection({
             <tbody>
               {advisees.map((advisee, index) => {
                 const status =
-                  advisee.status ||
-                  advisee.advising_status ||
-                  "Regular";
+                  advisee.status || advisee.advising_status || "Regular";
 
                 return (
-                  <tr
-                    key={
-                      advisee.id ||
-                      advisee.student_id ||
-                      index
-                    }
-                  >
+                  <tr key={advisee.id || advisee.student_id || index}>
                     <td>
                       {advisee.studentNumber ||
                         advisee.student_number ||
@@ -1627,47 +1327,34 @@ function AdviseesSection({
 |--------------------------------------------------------------------------
 */
 
-function AnnouncementsSection({
-  filter,
-  setFilter,
-  entries,
-}) {
+function AnnouncementsSection({ filter, setFilter, entries }) {
   return (
     <section className="dashboard-card full-width-card">
       <div className="card-heading">
         <div>
           <h2>Campus Announcements</h2>
 
-          <p>
-            Academic and administrative notices
-          </p>
+          <p>Academic and administrative notices</p>
         </div>
 
-        <Bell
-          size={23}
-          className="faculty-heading-icon"
-        />
+        <Bell size={23} className="faculty-heading-icon" />
       </div>
 
       <div className="faculty-announcement-filters">
-        {announcementCategories.map(
-          (category) => (
-            <button
-              type="button"
-              key={category}
-              className={
-                filter === category
-                  ? "faculty-filter-button faculty-filter-active"
-                  : "faculty-filter-button"
-              }
-              onClick={() =>
-                setFilter(category)
-              }
-            >
-              {category}
-            </button>
-          )
-        )}
+        {announcementCategories.map((category) => (
+          <button
+            type="button"
+            key={category}
+            className={
+              filter === category
+                ? "faculty-filter-button faculty-filter-active"
+                : "faculty-filter-button"
+            }
+            onClick={() => setFilter(category)}
+          >
+            {category}
+          </button>
+        ))}
       </div>
 
       {entries.length === 0 ? (
@@ -1677,29 +1364,20 @@ function AnnouncementsSection({
         />
       ) : (
         <div className="faculty-announcement-list">
-          {entries.map(
-            (announcement, index) => (
-              <AnnouncementCard
-                key={
-                  announcement.id ||
-                  announcement.announcement_id ||
-                  index
-                }
-                announcement={announcement}
-                expanded
-              />
-            )
-          )}
+          {entries.map((announcement, index) => (
+            <AnnouncementCard
+              key={announcement.id || announcement.announcement_id || index}
+              announcement={announcement}
+              expanded
+            />
+          ))}
         </div>
       )}
     </section>
   );
 }
 
-function AnnouncementCard({
-  announcement,
-  expanded = false,
-}) {
+function AnnouncementCard({ announcement, expanded = false }) {
   return (
     <article
       className={
@@ -1710,21 +1388,13 @@ function AnnouncementCard({
     >
       <div className="faculty-announcement-header">
         <span className="announcement-category">
-          {announcement.category ||
-            "General"}
+          {announcement.category || "General"}
         </span>
 
-        <time>
-          {announcement.date ||
-            announcement.created_at ||
-            ""}
-        </time>
+        <time>{announcement.date || announcement.created_at || ""}</time>
       </div>
 
-      <h3>
-        {announcement.title ||
-          "Untitled announcement"}
-      </h3>
+      <h3>{announcement.title || "Untitled announcement"}</h3>
 
       <p>
         {announcement.description ||
@@ -1753,9 +1423,7 @@ function ServiceRequestsSection({
         <div>
           <h2>Faculty Service Requests</h2>
 
-          <p>
-            Create and monitor faculty requests
-          </p>
+          <p>Create and monitor faculty requests</p>
         </div>
 
         <button
@@ -1772,8 +1440,7 @@ function ServiceRequestsSection({
         <ClipboardList size={23} />
 
         <p>
-          Requests in this section will be
-          submitted to the PHP faculty request
+          Requests in this section will be submitted to the PHP faculty request
           endpoint.
         </p>
       </div>
@@ -1797,12 +1464,7 @@ function ServiceRequestsSection({
   );
 }
 
-function RequestsTable({
-  requests,
-  showActions,
-  deleteRequest,
-  deletingId,
-}) {
+function RequestsTable({ requests, showActions, deleteRequest, deletingId }) {
   return (
     <div className="table-container faculty-request-table">
       <table>
@@ -1820,39 +1482,24 @@ function RequestsTable({
 
         <tbody>
           {requests.map((request, index) => {
-            const requestId =
-              getRequestId(request);
+            const requestId = getRequestId(request);
 
             return (
               <tr key={requestId || index}>
+                <td>{requestId || "Not available"}</td>
+
                 <td>
-                  {requestId || "Not available"}
+                  {request.service || request.service_type || "Not available"}
                 </td>
 
                 <td>
-                  {request.service ||
-                    request.service_type ||
-                    "Not available"}
+                  {request.details || request.description || "Not available"}
                 </td>
 
-                <td>
-                  {request.details ||
-                    request.description ||
-                    "Not available"}
-                </td>
+                <td>{request.date || request.created_at || "Not available"}</td>
 
                 <td>
-                  {request.date ||
-                    request.created_at ||
-                    "Not available"}
-                </td>
-
-                <td>
-                  <StatusBadge
-                    status={getRequestStatus(
-                      request
-                    )}
-                  />
+                  <StatusBadge status={getRequestStatus(request)} />
                 </td>
 
                 {showActions && (
@@ -1860,18 +1507,12 @@ function RequestsTable({
                     <button
                       type="button"
                       className="faculty-delete-button"
-                      disabled={
-                        deletingId === requestId
-                      }
-                      onClick={() =>
-                        deleteRequest(requestId)
-                      }
+                      disabled={deletingId === requestId}
+                      onClick={() => deleteRequest(requestId)}
                     >
                       <Trash2 size={16} />
 
-                      {deletingId === requestId
-                        ? "Deleting..."
-                        : "Delete"}
+                      {deletingId === requestId ? "Deleting..." : "Delete"}
                     </button>
                   </td>
                 )}
@@ -1900,17 +1541,13 @@ function RequestModal({
 }) {
   return (
     <div className="faculty-modal-overlay">
-      <form
-        className="faculty-request-modal"
-        onSubmit={submitRequest}
-      >
+      <form className="faculty-request-modal" onSubmit={submitRequest}>
         <div className="faculty-modal-heading">
           <div>
             <h2>Submit Faculty Request</h2>
 
             <p>
-              This request will be sent to PHP
-              when the endpoint is connected.
+              This request will be sent to PHP when the endpoint is connected.
             </p>
           </div>
 
@@ -1926,9 +1563,7 @@ function RequestModal({
         </div>
 
         <div className="form-group">
-          <label htmlFor="faculty-request-service">
-            Service type
-          </label>
+          <label htmlFor="faculty-request-service">Service type</label>
 
           <select
             id="faculty-request-service"
@@ -1937,36 +1572,24 @@ function RequestModal({
             onChange={handleChange}
             disabled={submitting}
           >
-            <option value="Classroom Concern">
-              Classroom Concern
-            </option>
+            <option value="Classroom Concern">Classroom Concern</option>
 
-            <option value="Schedule Concern">
-              Schedule Concern
-            </option>
+            <option value="Schedule Concern">Schedule Concern</option>
 
-            <option value="Teaching Load Concern">
-              Teaching Load Concern
-            </option>
+            <option value="Teaching Load Concern">Teaching Load Concern</option>
 
             <option value="Faculty Record Concern">
               Faculty Record Concern
             </option>
 
-            <option value="Portal Access">
-              Portal Access
-            </option>
+            <option value="Portal Access">Portal Access</option>
 
-            <option value="Other Faculty Service">
-              Other Faculty Service
-            </option>
+            <option value="Other Faculty Service">Other Faculty Service</option>
           </select>
         </div>
 
         <div className="form-group">
-          <label htmlFor="faculty-request-details">
-            Request details
-          </label>
+          <label htmlFor="faculty-request-details">Request details</label>
 
           <textarea
             id="faculty-request-details"
@@ -1983,11 +1606,7 @@ function RequestModal({
           </div>
         </div>
 
-        {error && (
-          <p className="faculty-form-error">
-            {error}
-          </p>
-        )}
+        {error && <p className="faculty-form-error">{error}</p>}
 
         <div className="faculty-modal-actions">
           <button
@@ -2006,9 +1625,7 @@ function RequestModal({
           >
             <Send size={18} />
 
-            {submitting
-              ? "Submitting..."
-              : "Submit Request"}
+            {submitting ? "Submitting..." : "Submit Request"}
           </button>
         </div>
       </form>
@@ -2024,11 +1641,7 @@ function RequestModal({
 
 function StatusBadge({ status }) {
   return (
-    <span
-      className={`status-badge ${getStatusClass(
-        status
-      )}`}
-    >
+    <span className={`status-badge ${getStatusClass(status)}`}>
       {status || "Not available"}
     </span>
   );
@@ -2041,19 +1654,12 @@ function DashboardLoadingState() {
 
       <h2>Loading faculty information</h2>
 
-      <p>
-        Waiting for a response from the PHP API.
-      </p>
+      <p>Waiting for a response from the PHP API.</p>
     </section>
   );
 }
 
-function EmptyState({
-  title,
-  description,
-  buttonText,
-  onClick,
-}) {
+function EmptyState({ title, description, buttonText, onClick }) {
   return (
     <div className="faculty-empty-state">
       <UserRound size={35} />
@@ -2062,11 +1668,7 @@ function EmptyState({
       <p>{description}</p>
 
       {buttonText && (
-        <button
-          type="button"
-          className="primary-button"
-          onClick={onClick}
-        >
+        <button type="button" className="primary-button" onClick={onClick}>
           <Plus size={17} />
           {buttonText}
         </button>
@@ -2091,11 +1693,7 @@ function CompactEmptyState({ message }) {
 */
 
 function extractData(response, propertyName) {
-  return (
-    response?.data ||
-    response?.[propertyName] ||
-    response
-  );
+  return response?.data || response?.[propertyName] || response;
 }
 
 function normalizeFaculty(data) {
@@ -2107,35 +1705,17 @@ function normalizeFaculty(data) {
     ...emptyFaculty,
     ...data,
 
-    employeeNumber:
-      data.employeeNumber ||
-      data.employee_number ||
-      "",
+    employeeNumber: data.employeeNumber || data.employee_number || "",
 
-    firstName:
-      data.firstName ||
-      data.first_name ||
-      "",
+    firstName: data.firstName || data.first_name || "",
 
-    middleName:
-      data.middleName ||
-      data.middle_name ||
-      "",
+    middleName: data.middleName || data.middle_name || "",
 
-    lastName:
-      data.lastName ||
-      data.last_name ||
-      "",
+    lastName: data.lastName || data.last_name || "",
 
-    fullName:
-      data.fullName ||
-      data.full_name ||
-      "",
+    fullName: data.fullName || data.full_name || "",
 
-    academicYear:
-      data.academicYear ||
-      data.academic_year ||
-      "",
+    academicYear: data.academicYear || data.academic_year || "",
   };
 }
 
@@ -2145,18 +1725,10 @@ function normalizeWorkload(data) {
   }
 
   const lectureUnits =
-    Number(
-      data.lectureUnits ??
-        data.lecture_units ??
-        0
-    ) || 0;
+    Number(data.lectureUnits ?? data.lecture_units ?? 0) || 0;
 
   const laboratoryUnits =
-    Number(
-      data.laboratoryUnits ??
-        data.laboratory_units ??
-        0
-    ) || 0;
+    Number(data.laboratoryUnits ?? data.laboratory_units ?? 0) || 0;
 
   return {
     ...emptyWorkload,
@@ -2168,54 +1740,31 @@ function normalizeWorkload(data) {
 
     totalUnits:
       Number(
-        data.totalUnits ??
-          data.total_units ??
-          lectureUnits + laboratoryUnits
+        data.totalUnits ?? data.total_units ?? lectureUnits + laboratoryUnits,
       ) || 0,
 
-    maximumUnits:
-      Number(
-        data.maximumUnits ??
-          data.maximum_units ??
-          24
-      ) || 24,
+    maximumUnits: Number(data.maximumUnits ?? data.maximum_units ?? 24) || 24,
   };
 }
 
 function getFirstName(fullName) {
-  if (
-    !fullName ||
-    typeof fullName !== "string"
-  ) {
+  if (!fullName || typeof fullName !== "string") {
     return "";
   }
 
-  return (
-    fullName.trim().split(/\s+/)[0] || ""
-  );
+  return fullName.trim().split(/\s+/)[0] || "";
 }
 
 function getRequestId(request) {
-  return (
-    request.id ||
-    request.requestId ||
-    request.request_id ||
-    ""
-  );
+  return request.id || request.requestId || request.request_id || "";
 }
 
 function getRequestStatus(request) {
-  return (
-    request.status ||
-    request.request_status ||
-    "Submitted"
-  );
+  return request.status || request.request_status || "Submitted";
 }
 
 function getStatusClass(status) {
-  const normalizedStatus = String(
-    status || ""
-  ).toLowerCase();
+  const normalizedStatus = String(status || "").toLowerCase();
 
   if (
     normalizedStatus === "completed" ||
@@ -2256,27 +1805,20 @@ function getSectionDescription(section) {
     dashboard:
       "Review assigned classes, workload, advisees, announcements, and service requests.",
 
-    directory:
-      "Search academic departments and administrative offices.",
+    directory: "Search academic departments and administrative offices.",
 
-    classes:
-      "Review and search your assigned classes and schedules.",
+    classes: "Review and search your assigned classes and schedules.",
 
-    workload:
-      "Monitor your lecture and laboratory teaching load.",
+    workload: "Monitor your lecture and laboratory teaching load.",
 
-    advisees:
-      "Search students assigned for faculty advising.",
+    advisees: "Search students assigned for faculty advising.",
 
-    announcements:
-      "Read academic, enrollment, and campus announcements.",
+    announcements: "Read academic, enrollment, and campus announcements.",
 
-    requests:
-      "Create and monitor faculty service requests.",
+    requests: "Create and monitor faculty service requests.",
   };
 
-  return descriptions[section] ||
-    descriptions.dashboard;
+  return descriptions[section] || descriptions.dashboard;
 }
 
 export default FacultyDashboard;

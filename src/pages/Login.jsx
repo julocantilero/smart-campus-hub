@@ -1,44 +1,49 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  BookOpen,
-  GraduationCap,
-  LockKeyhole,
-  Mail,
-} from "lucide-react";
+import { BookOpen, GraduationCap, LockKeyhole, Mail } from "lucide-react";
 import schoolLogo from "../assets/iscplogo.png";
+import { login } from "../services/authApi";
 
 export default function Login() {
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!email.trim() || !password.trim()) {
-      setError("Please enter your university email and password.");
+      setError("Please enter your email and password.");
       return;
     }
 
     if (!email.includes("@")) {
-      setError("Please enter a valid university email.");
+      setError("Please enter a valid email address.");
       return;
     }
 
-    setError("");
+    try {
+      setError("");
 
-    const dashboardRoutes = {
-      student: "/student-dashboard",
-      faculty: "/faculty-dashboard",
-      admin: "/admin-dashboard",
-    };
+      const response = await login(email, password);
 
-    navigate(dashboardRoutes[role]);
+      if (!response.success) {
+        setError(response.message || "Invalid credentials.");
+        return;
+      }
+
+      const dashboardRoutes = {
+        student: "/student-dashboard",
+        faculty: "/faculty-dashboard",
+        admin: "/admin-dashboard",
+      };
+
+      navigate(dashboardRoutes[response.role]);
+    } catch (error) {
+      setError(error.message || "Unable to connect to the server.");
+    }
   }
 
   return (
@@ -47,15 +52,13 @@ export default function Login() {
         <section className="left-panel">
           <div>
             <div className="school-logo">
-              <img src = {schoolLogo}/>
+              <img src={schoolLogo} />
             </div>
 
             <p className="system-label">SMART CAMPUS HUB</p>
-            
-            <h1>
-              International State College of the Philippines (ISCP)
-            </h1>  
-          </div>   
+
+            <h1>International State College of the Philippines (ISCP)</h1>
+          </div>
         </section>
 
         <section className="right-panel">
@@ -77,7 +80,7 @@ export default function Login() {
                 <input
                   id="email"
                   type="email"
-                  placeholder="name@university.edu"
+                  placeholder="name@iscp.edu.ph"
                   value={email}
                   onChange={(event) => {
                     setEmail(event.target.value);
@@ -106,34 +109,12 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="form-group">
-              
-              <div className="role-selector">
-                {["student", "faculty", "admin"].map((roleOption) => (
-                  <button
-                    key={roleOption}
-                    type="button"
-                    className={
-                      role === roleOption
-                        ? "role-button role-button-selected"
-                        : "role-button"
-                    }
-                    onClick={() => setRole(roleOption)}
-                  >
-                    {roleOption}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="login-options">
               <label className="remember-option">
                 <input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(event) =>
-                    setRememberMe(event.target.checked)
-                  }
+                  onChange={(event) => setRememberMe(event.target.checked)}
                 />
 
                 <span>Remember me</span>
@@ -149,8 +130,6 @@ export default function Login() {
             <button type="submit" className="sign-in-button">
               Sign In
             </button>
-
-            
           </form>
         </section>
       </div>

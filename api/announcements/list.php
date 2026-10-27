@@ -1,14 +1,23 @@
 <?php
 
 require_once "../config/cors.php";
+require_once "../config/database.php";
 
-header("Access-Control-Allow-Origin: http://localhost:5173");
-header("Access-Control-Allow-Credentials: true");
-header("Access-Control-Allow-Headers: Content-Type");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Content-Type: application/json; charset=UTF-8");
+header("Content-Type: application/json");
 
-if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
-    http_response_code(200);
-    exit;
+$result = $conn->query("
+    SELECT *
+    FROM announcements
+    ORDER BY created_at DESC
+");
+
+$announcements = [];
+
+while ($row = $result->fetch_assoc()) {
+    $announcements[] = $row;
 }
+
+echo json_encode([
+    "success" => true,
+    "data" => $announcements
+]);

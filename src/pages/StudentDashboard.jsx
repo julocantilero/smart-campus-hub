@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
   Bell,
@@ -31,7 +31,6 @@ import {
 
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
-
 
 /*
 |--------------------------------------------------------------------------
@@ -143,11 +142,27 @@ function StudentDashboard() {
 
   const [pageMessage, setPageMessage] = useState("");
 
+  const navigate = useNavigate();
+
+  
+
   /*
   |--------------------------------------------------------------------------
   | Load dashboard information
   |--------------------------------------------------------------------------
   */
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  async function checkSession() {
+    const session = await getSession();
+
+    if (!session.logged_in) {
+      navigate("/");
+    }
+  }
 
   useEffect(() => {
     loadDashboardData();
@@ -398,15 +413,15 @@ function StudentDashboard() {
   }
 
   function handleRequestChange(event) {
-  const { name, value } = event.target;
+    const { name, value } = event.target;
 
-  setRequestForm((previousForm) => ({
-    ...previousForm,
-    value,
-  }));
+    setRequestForm((previousForm) => ({
+      ...previousForm,
+      [name]: value,
+    }));
 
-  setRequestError("");
-}
+    setRequestError("");
+  }
 
   /*
   |--------------------------------------------------------------------------
