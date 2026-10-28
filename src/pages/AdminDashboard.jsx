@@ -152,7 +152,7 @@ function AdminDashboard() {
         getAdminProfile(),
         getAdminStatistics(),
         getEnrollmentOverview(),
-        getAdminAnnouncements(),
+        getAnnouncements(),
         getAdminRequests(),
         getReports(),
       ]);

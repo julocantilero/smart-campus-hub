@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-
 import { useNavigate, useSearchParams } from "react-router-dom";
-
 import {
   Bell,
   BookOpen,
@@ -17,11 +15,19 @@ import {
   Users,
   X,
 } from "lucide-react";
-
-
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
+import { getSession } from "../services/authApi";
+import {
+  getStudentProfile,
+  getStudentEnrollment,
+  getStudentSubjects,
+  getStudentRequests,
+  createStudentRequest,
+  deleteStudentRequest,
+} from "../services/studentApi";
 
+import { getAnnouncements, getCampusDirectory } from "../services/sharedApi";
 /*
 |--------------------------------------------------------------------------
 | Empty/default values
@@ -134,8 +140,6 @@ function StudentDashboard() {
 
   const navigate = useNavigate();
 
-  
-
   /*
   |--------------------------------------------------------------------------
   | Load dashboard information
@@ -148,6 +152,8 @@ function StudentDashboard() {
 
   async function checkSession() {
     const session = await getSession();
+
+    console.log("SESSION:", session);
 
     if (!session.logged_in) {
       navigate("/");
@@ -170,6 +176,7 @@ function StudentDashboard() {
       getCampusDirectory(),
       getStudentRequests(),
     ]);
+    console.log(results);
 
     const [
       profileResult,

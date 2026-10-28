@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Bell,
@@ -17,12 +16,18 @@ import {
   Users,
   X,
 } from "lucide-react";
-
 import DashboardLayout from "../components/DashboardLayout.jsx";
 import StatCard from "../components/StatCard.jsx";
-
-
-
+import { getAnnouncements } from "../services/sharedApi";
+import { getSession } from "../services/authApi";
+import { getFacultyProfile } from "../services/facultyApi";
+import { getFacultyWorkload } from "../services/facultyApi";
+import { getFacultyClasses } from "../services/facultyApi";
+import { getFacultyAdvisees } from "../services/facultyApi";
+import { getFacultyDirectory } from "../services/facultyApi";
+import { getFacultyRequests } from "../services/facultyApi";
+import { createFacultyRequest } from "../services/facultyApi";
+import { deleteFacultyRequest } from "../services/facultyApi";
 /*
 |--------------------------------------------------------------------------
 | Empty/default values
@@ -140,7 +145,7 @@ function FacultyDashboard() {
       getFacultyWorkload(),
       getFacultyClasses(),
       getFacultyAdvisees(),
-      getFacultyAnnouncements(),
+      getAnnouncements(),
       getFacultyDirectory(),
       getFacultyRequests(),
     ]);
@@ -165,12 +170,17 @@ function FacultyDashboard() {
       setFaculty(normalizeFaculty(profileData));
     }
 
-    if (workloadResult.status === "fulfilled") {
-      successfulRequests += 1;
+    if (announcementsResult.status === "fulfilled") {
+      console.log("Announcements Result:", announcementsResult.value);
 
-      const workloadData = extractData(workloadResult.value, "workload");
+      const announcementData = extractData(
+        announcementsResult.value,
+        "announcements",
+      );
 
-      setWorkload(normalizeWorkload(workloadData));
+      console.log("Announcement Data:", announcementData);
+
+      setAnnouncements(Array.isArray(announcementData) ? announcementData : []);
     }
 
     if (classesResult.status === "fulfilled") {
@@ -416,16 +426,15 @@ function FacultyDashboard() {
   }
 
   function handleRequestChange(event) {
-  const { name, value } = event.target;
+    const { name, value } = event.target;
 
-  setRequestForm((previousForm) => ({
-    ...previousForm,
-    [name]: value,
-  }));
+    setRequestForm((previousForm) => ({
+      ...previousForm,
+      [name]: value,
+    }));
 
-  setRequestError("");
-}
-
+    setRequestError("");
+  }
 
   async function submitRequest(event) {
     event.preventDefault();

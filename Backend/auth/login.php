@@ -38,8 +38,12 @@ if (
 
     echo json_encode([
         "success" => true,
-        "role" => $user["role"]
+        "session_id" => session_id(),
+        "user_id" => $_SESSION["user_id"],
+        "role" => $_SESSION["role"]
     ]);
+
+    exit;
 } else {
     echo json_encode([
         "success" => false,
