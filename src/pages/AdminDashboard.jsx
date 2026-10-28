@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
 import { Download, Plus } from "lucide-react";
-import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
+import DashboardLayout from "../components/DashboardLayout";
 import { useNavigate, useSearchParams } from "react-router-dom";
-
-
+import {
+  getAdminProfile,
+  getAdminStatistics,
+  getEnrollmentOverview,
+  getAdminRequests,
+  getReports,
+  createAnnouncement,
+  updateRequestStatus,
+} from "../services/adminApi";
+import { getSession } from "../services/authApi";
+import { getAnnouncements } from "../services/sharedApi";
+import { Users, GraduationCap, ClipboardList, Bell } from "lucide-react";
 
 function AdminDashboard() {
   const [admin, setAdmin] = useState({});
@@ -14,6 +24,12 @@ function AdminDashboard() {
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const iconMap = {
+    Students: Users,
+    Faculty: GraduationCap,
+    Requests: ClipboardList,
+    Announcements: Bell,
+  };
   const [apiConnected, setApiConnected] = useState(false);
   const [pageMessage, setPageMessage] = useState("");
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
@@ -179,8 +195,13 @@ function AdminDashboard() {
       if (statisticsResult.status === "fulfilled") {
         successCount++;
 
+        const stats = statisticsResult.value?.data || [];
+
         setStatistics(
-          statisticsResult.value?.data || statisticsResult.value || [],
+          stats.map((stat) => ({
+            ...stat,
+            icon: iconMap[stat.title],
+          })),
         );
       }
 

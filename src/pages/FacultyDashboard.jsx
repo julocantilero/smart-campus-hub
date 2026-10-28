@@ -170,17 +170,12 @@ function FacultyDashboard() {
       setFaculty(normalizeFaculty(profileData));
     }
 
-    if (announcementsResult.status === "fulfilled") {
-      console.log("Announcements Result:", announcementsResult.value);
+    if (workloadResult.status === "fulfilled") {
+      successfulRequests += 1;
 
-      const announcementData = extractData(
-        announcementsResult.value,
-        "announcements",
-      );
+      const workloadData = extractData(workloadResult.value, "workload");
 
-      console.log("Announcement Data:", announcementData);
-
-      setAnnouncements(Array.isArray(announcementData) ? announcementData : []);
+      setWorkload(workloadData || {});
     }
 
     if (classesResult.status === "fulfilled") {
@@ -225,6 +220,8 @@ function FacultyDashboard() {
 
       setRequests(Array.isArray(requestData) ? requestData : []);
     }
+
+    console.log("Successful Requests:", successfulRequests);
 
     if (successfulRequests === 0) {
       setApiConnected(false);
