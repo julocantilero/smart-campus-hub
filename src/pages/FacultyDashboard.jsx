@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useNavigate, useSearchParams } from "react-router-dom";
-
+import { getSession } from "../services/authApi";
 import {
   Bell,
   BookOpen,
@@ -427,15 +427,16 @@ function FacultyDashboard() {
   }
 
   function handleRequestChange(event) {
-    const { name, value } = event.target;
+  const { name, value } = event.target;
 
-    setRequestForm((previousForm) => ({
-      ...previousForm,
-      value,
-    }));
+  setRequestForm((previousForm) => ({
+    ...previousForm,
+    [name]: value,
+  }));
 
-    setRequestError("");
-  }
+  setRequestError("");
+}
+
 
   async function submitRequest(event) {
     event.preventDefault();
