@@ -18,16 +18,6 @@ import {
   X,
 } from "lucide-react";
 
-import {
-  createStudentRequest,
-  deleteStudentRequest,
-  getAnnouncements,
-  getCampusDirectory,
-  getStudentEnrollment,
-  getStudentProfile,
-  getStudentRequests,
-  getStudentSubjects,
-} from "../services/studentApi.js";
 
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getSession } from "../services/authApi";
 import {
   Bell,
   BookOpen,
@@ -22,17 +21,7 @@ import {
 import DashboardLayout from "../components/DashboardLayout.jsx";
 import StatCard from "../components/StatCard.jsx";
 
-import {
-  createFacultyRequest,
-  deleteFacultyRequest,
-  getFacultyAdvisees,
-  getFacultyAnnouncements,
-  getFacultyClasses,
-  getFacultyDirectory,
-  getFacultyProfile,
-  getFacultyRequests,
-  getFacultyWorkload,
-} from "../services/facultyApi.js";
+
 
 /*
 |--------------------------------------------------------------------------

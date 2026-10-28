@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, GraduationCap, LockKeyhole, Mail } from "lucide-react";
 import schoolLogo from "../assets/iscplogo.png";
 import { login } from "../services/authApi";
-
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
