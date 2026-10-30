@@ -6,7 +6,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   getAdminProfile,
   getAdminStatistics,
-  getEnrollmentOverview,
   getAdminRequests,
   getReports,
   createAnnouncement,
@@ -15,17 +14,21 @@ import {
   deleteDirectory,
   createDirectory,
   deleteAnnouncement,
+  getEnrollments,
+  updateEnrollmentStatus,
+  deleteEnrollment,
 } from "../services/adminApi";
 import { getSession } from "../services/authApi";
 import { getAnnouncements } from "../services/sharedApi";
 import { Users, GraduationCap, ClipboardList, Bell } from "lucide-react";
-
+import jsPDF from "jspdf";
 function AdminDashboard() {
   const [admin, setAdmin] = useState({});
   const [statistics, setStatistics] = useState([]);
-  const [enrollmentOverview, setEnrollmentOverview] = useState({});
+
   const [announcements, setAnnouncements] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [directoryEntries, setDirectoryEntries] = useState([]);
@@ -52,7 +55,7 @@ function AdminDashboard() {
   }, []);
 
   const [showDirectoryModal, setShowDirectoryModal] = useState(false);
-
+  const [enrollments, setEnrollments] = useState([]);
   const [directoryForm, setDirectoryForm] = useState({
     name: "",
     type: "",
@@ -97,6 +100,25 @@ function AdminDashboard() {
     };
 
     return titles[section] || titles.dashboard;
+  }
+
+  async function handleEnrollmentStatusUpdate(enrollmentId, status) {
+    try {
+      await updateEnrollmentStatus(enrollmentId, status);
+
+      setEnrollments((previous) =>
+        previous.map((enrollment) =>
+          enrollment.id === enrollmentId
+            ? {
+                ...enrollment,
+                status,
+              }
+            : enrollment,
+        ),
+      );
+    } catch (error) {
+      alert(error.message || "Failed to update enrollment status.");
+    }
   }
 
   function getSectionDescription(section) {
@@ -213,6 +235,24 @@ function AdminDashboard() {
     }
   }
 
+  async function handleDeleteEnrollment(id) {
+    const confirmed = window.confirm("Remove this enrollment record?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteEnrollment(id);
+
+      setEnrollments((previous) =>
+        previous.filter((enrollment) => enrollment.id !== id),
+      );
+    } catch (error) {
+      alert(error.message || "Failed to remove enrollment.");
+    }
+  }
+
   async function handleDeleteDirectory(id) {
     const confirmed = window.confirm("Delete this directory entry?");
 
@@ -240,11 +280,11 @@ function AdminDashboard() {
       const results = await Promise.allSettled([
         getAdminProfile(),
         getAdminStatistics(),
-        getEnrollmentOverview(),
         getAnnouncements(),
         getAdminRequests(),
         getReports(),
         getDirectory(),
+        getEnrollments(),
       ]);
 
       console.log(results);
@@ -252,11 +292,11 @@ function AdminDashboard() {
       const [
         profileResult,
         statisticsResult,
-        enrollmentResult,
         announcementsResult,
         requestsResult,
         reportsResult,
         directoryResult,
+        enrollmentsResult,
       ] = results;
 
       let successCount = 0;
@@ -277,14 +317,6 @@ function AdminDashboard() {
             ...stat,
             icon: iconMap[stat.title],
           })),
-        );
-      }
-
-      if (enrollmentResult.status === "fulfilled") {
-        successCount++;
-
-        setEnrollmentOverview(
-          enrollmentResult.value?.data || enrollmentResult.value,
         );
       }
 
@@ -310,6 +342,10 @@ function AdminDashboard() {
         successCount++;
 
         setDirectoryEntries(directoryResult.value?.data || []);
+      }
+
+      if (enrollmentsResult.status === "fulfilled") {
+        setEnrollments(enrollmentsResult.value?.data || []);
       }
 
       if (successCount > 0) {
@@ -359,19 +395,6 @@ function AdminDashboard() {
 
           <p>{getSectionDescription(currentSection)}</p>
         </div>
-
-        <div className="heading-actions">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => {
-              changeSection("reports");
-            }}
-          >
-            <Download size={19} />
-            View Reports
-          </button>
-        </div>
       </section>
 
       <section className="stats-grid">
@@ -401,13 +424,21 @@ function AdminDashboard() {
 
       {currentSection === "enrollment" && (
         <AdminEnrollmentSection
-          enrollmentOverview={enrollmentOverview}
+          enrollments={enrollments}
           changeSection={changeSection}
+          handleEnrollmentStatusUpdate={handleEnrollmentStatusUpdate}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          handleDeleteEnrollment={handleDeleteEnrollment}
         />
       )}
 
       {currentSection === "reports" && (
-        <AdminReportsSection reports={reports} changeSection={changeSection} />
+        <AdminReportsSection
+          reports={reports}
+          changeSection={changeSection}
+          enrollments={enrollments}
+        />
       )}
 
       {currentSection === "announcements" && (
@@ -461,12 +492,19 @@ function AdminOverview({
       <article className="dashboard-card" style={{ cursor: "pointer" }}>
         <div className="card-heading">
           <h2>Announcements</h2>
-          
         </div>
 
         <h3>{announcements.length}</h3>
 
         <p>Published announcements</p>
+
+        <button
+          type="button"
+          className="primary-button"
+          onClick={() => changeSection("announcements")}
+        >
+          Open
+        </button>
       </article>
 
       <article className="dashboard-card">
@@ -487,6 +525,19 @@ function AdminOverview({
 
       <article className="dashboard-card">
         <div className="card-heading">
+          <h2>Reports</h2>
+        </div>
+
+        <button
+          className="primary-button"
+          onClick={() => changeSection("reports")}
+        >
+          Open Reports
+        </button>
+      </article>
+
+      <article className="dashboard-card">
+        <div className="card-heading">
           <h2>Enrollment</h2>
         </div>
 
@@ -495,21 +546,6 @@ function AdminOverview({
           onClick={() => changeSection("enrollment")}
         >
           Open
-        </button>
-      </article>
-
-      <article className="dashboard-card">
-        <div className="card-heading">
-          <h2>Reports</h2>
-        </div>
-
-        <button
-          type="button"
-          className="primary-button"
-          onClick={() => alert("Report generation coming soon.")}
-        >
-          <Download size={18} />
-          Generate Report
         </button>
       </article>
     </section>
@@ -583,33 +619,193 @@ function AdminDirectorySection({
   );
 }
 
-function AdminEnrollmentSection({ enrollmentOverview, changeSection }) {
+function AdminEnrollmentSection({
+  enrollments,
+  changeSection,
+  handleEnrollmentStatusUpdate,
+  handleDeleteEnrollment,
+  handleRequestStatusUpdate,
+  searchTerm,
+  setSearchTerm,
+}) {
+  const enrolledStudents = enrollments.filter(
+    (enrollment) => enrollment.status === "Enrolled",
+  ).length;
+
+  const pendingStudents = enrollments.filter(
+    (enrollment) => enrollment.status === "Pending",
+  ).length;
+
+  const rejectedStudents = enrollments.filter(
+    (enrollment) => enrollment.status === "Rejected",
+  ).length;
+
+  const totalUnits = enrollments.reduce(
+    (total, enrollment) => total + Number(enrollment.total_units || 0),
+    0,
+  );
+
+  const filteredEnrollments = enrollments.filter(
+    (enrollment) =>
+      `${enrollment.first_name} ${enrollment.last_name}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      enrollment.student_number
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()),
+  );
   return (
-    <section className="dashboard-card">
-      <button
-        type="button"
-        className="secondary-button"
-        onClick={() => changeSection("dashboard")}
-      >
-        Back to Dashboard
-      </button>
+    <section className="dashboard-card admin-section">
+      <div className="card-heading">
+        <h2>Enrollment Management</h2>
 
-      <h2>Enrollment Overview</h2>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => changeSection("dashboard")}
+        >
+          Back
+        </button>
+      </div>
 
-      <div className="admin-enrollment-grid">
-        {Object.entries(enrollmentOverview || {}).map(([key, value]) => (
-          <div key={key} className="dashboard-card">
-            <h3>{key}</h3>
+      <div className="form-group">
+        <input
+          type="search"
+          placeholder="Search student..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
 
-            <p>{String(value)}</p>
-          </div>
-        ))}
+      <div className="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Student No.</th>
+              <th>Name</th>
+              <th>Program</th>
+              <th>Year</th>
+              <th>Semester</th>
+              <th>Units</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filteredEnrollments.map((enrollment) => (
+              <tr key={enrollment.id}>
+                <td>{enrollment.student_number}</td>
+                <td>
+                  {enrollment.first_name} {enrollment.last_name}
+                </td>
+                <td>{enrollment.program}</td>
+                <td>{enrollment.year_level}</td>
+                <td>{enrollment.semester}</td>
+                <td>{enrollment.total_units}</td>
+                <td>
+                  <span
+                    className={`status-badge ${
+                      enrollment.status === "Enrolled"
+                        ? "status-completed"
+                        : enrollment.status === "Rejected"
+                          ? "status-rejected"
+                          : "status-processing"
+                    }`}
+                  >
+                    {enrollment.status}
+                  </span>
+                </td>
+
+                <td>
+                  {enrollment.status === "Pending" && (
+                    <>
+                      <button
+                        type="button"
+                        className="primary-button"
+                        onClick={() =>
+                          handleEnrollmentStatusUpdate(
+                            enrollment.id,
+                            "Enrolled",
+                          )
+                        }
+                      >
+                        Approve
+                      </button>
+
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        style={{ marginLeft: "8px" }}
+                        onClick={() =>
+                          handleEnrollmentStatusUpdate(
+                            enrollment.id,
+                            "Rejected",
+                          )
+                        }
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    style={{ marginLeft: "8px" }}
+                    onClick={() => handleDeleteEnrollment(enrollment.id)}
+                  >
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </section>
   );
 }
 
-function AdminReportsSection({ reports, changeSection }) {
+function AdminReportsSection({ reports, changeSection, enrollments }) {
+  const totalEnrollments = enrollments.length;
+
+  const totalEnrolled = enrollments.filter(
+    (e) => e.status === "Enrolled",
+  ).length;
+
+  const totalPending = enrollments.filter((e) => e.status === "Pending").length;
+
+  const totalRejected = enrollments.filter(
+    (e) => e.status === "Rejected",
+  ).length;
+
+  const totalUnits = enrollments.reduce(
+    (total, enrollment) => total + Number(enrollment.total_units || 0),
+    0,
+  );
+
+  function exportPDF() {
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("Smart Campus Hub Report", 20, 20);
+
+    doc.setFontSize(12);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 35);
+
+    doc.text(`Total Enrollments: ${totalEnrollments}`, 20, 55);
+
+    doc.text(`Enrolled Students: ${totalEnrolled}`, 20, 65);
+
+    doc.text(`Pending Students: ${totalPending}`, 20, 75);
+
+    doc.text(`Rejected Students: ${totalRejected}`, 20, 85);
+
+    doc.text(`Total Units: ${totalUnits}`, 20, 95);
+
+    doc.save("Enrollment_Report.pdf");
+  }
   return (
     <section className="dashboard-card">
       <button
@@ -621,15 +817,9 @@ function AdminReportsSection({ reports, changeSection }) {
       </button>
 
       <h2>Reports</h2>
-      <button
-        type="button"
-        className="primary-button"
-        onClick={() => {
-          alert("Report generation coming soon.");
-        }}
-      >
+      <button type="button" className="primary-button" onClick={exportPDF}>
         <Download size={18} />
-        Generate Report
+        Export PDF
       </button>
 
       <div className="table-container">

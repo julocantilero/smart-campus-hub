@@ -127,3 +127,60 @@ export async function deleteAnnouncement(id) {
   return response.json();
 }
 
+export async function getEnrollments() {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/getEnrollments.php`,
+    {
+      credentials: "include",
+    }
+  );
+
+  return response.json();
+}
+
+export async function updateEnrollmentStatus(
+  enrollmentId,
+  status,
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/updateEnrollmentStatus.php`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: enrollmentId,
+        status,
+      }),
+    },
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+        "Failed to update enrollment status.",
+    );
+  }
+
+  return data;
+}
+
+export async function deleteEnrollment(id) {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/deleteEnrollment.php`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    },
+  );
+
+  return response.json();
+}

@@ -72,3 +72,27 @@ export async function deleteStudentRequest(id) {
 
   return response.json();
 }
+
+export async function submitEnrollment(enrollmentData) {
+  const response = await fetch(
+    `${API_BASE_URL}/student/submitEnrollment.php`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(enrollmentData),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(
+      data.message || "Failed to submit enrollment."
+    );
+  }
+
+  return data;
+}

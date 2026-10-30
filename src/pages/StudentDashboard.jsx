@@ -25,6 +25,7 @@ import {
   getStudentRequests,
   createStudentRequest,
   deleteStudentRequest,
+  submitEnrollment,
 } from "../services/studentApi";
 
 import { getAnnouncements, getCampusDirectory } from "../services/sharedApi";
@@ -60,29 +61,6 @@ const emptyEnrollment = {
   totalUnits: 0,
   stages: [],
 };
-
-const defaultEnrollmentStages = [
-  {
-    id: 1,
-    title: "Application Submitted",
-    status: "Pending",
-  },
-  {
-    id: 2,
-    title: "Requirements Reviewed",
-    status: "Pending",
-  },
-  {
-    id: 3,
-    title: "Subject Loading",
-    status: "Pending",
-  },
-  {
-    id: 4,
-    title: "Officially Enrolled",
-    status: "Pending",
-  },
-];
 
 const announcementCategories = ["All", "Academic", "Enrollment", "Campus"];
 
@@ -139,7 +117,7 @@ function StudentDashboard() {
   const [pageMessage, setPageMessage] = useState("");
 
   const navigate = useNavigate();
-  
+
   /*
   |--------------------------------------------------------------------------
   | Load dashboard information
@@ -196,7 +174,7 @@ function StudentDashboard() {
         profileResult.value?.data ||
         profileResult.value?.student ||
         profileResult.value;
-
+      console.log("PROFILE DATA:", profileData);
       setStudent(normalizeStudent(profileData));
     }
 
@@ -420,6 +398,24 @@ function StudentDashboard() {
     setRequestError("");
   }
 
+  async function handleSubmitEnrollment() {
+    console.log("Student Object:", student);
+
+    try {
+      await submitEnrollment({
+        user_id: student.id,
+        semester: student.semester,
+        academic_year: student.academicYear,
+        total_units: student.totalUnits,
+      });
+
+      alert("Enrollment submitted successfully.");
+      loadDashboardData();
+    } catch (error) {
+      alert(error.message || "Failed to submit enrollment.");
+    }
+  }
+
   /*
   |--------------------------------------------------------------------------
   | Submit service request to PHP
@@ -522,7 +518,10 @@ function StudentDashboard() {
   */
 
   return (
-    <DashboardLayout role="student" userName={student?.fullname || "Not Available"}>
+    <DashboardLayout
+      role="student"
+      userName={student?.fullname || "Not Available"}
+    >
       <section className="page-heading">
         <div>
           <p className="academic-year">Academic Year {academicYear}</p>
@@ -592,6 +591,7 @@ function StudentDashboard() {
               studentFullName={studentFullName}
               enrollment={enrollment}
               subjects={subjects}
+              handleSubmitEnrollment={handleSubmitEnrollment}
             />
           )}
 
@@ -916,11 +916,13 @@ function DirectorySection({ search, setSearch, entries }) {
 |--------------------------------------------------------------------------
 */
 
-function EnrollmentSection({ student, studentFullName, enrollment, subjects }) {
-  const stages =
-    Array.isArray(enrollment.stages) && enrollment.stages.length > 0
-      ? enrollment.stages
-      : defaultEnrollmentStages;
+function EnrollmentSection({
+  student,
+  studentFullName,
+  enrollment,
+  subjects,
+  handleSubmitEnrollment,
+}) {
 
   return (
     <>
@@ -929,7 +931,6 @@ function EnrollmentSection({ student, studentFullName, enrollment, subjects }) {
           <div className="card-heading">
             <div>
               <h2>Enrollment Status</h2>
-
               <p>Current semester information</p>
             </div>
 
@@ -945,49 +946,60 @@ function EnrollmentSection({ student, studentFullName, enrollment, subjects }) {
             studentFullName={studentFullName}
             enrollment={enrollment}
           />
+
+          {!["Pending", "Enrolled", "Rejected"].includes(enrollment.status) && (
+            <button
+              type="button"
+              className="primary-button"
+              onClick={handleSubmitEnrollment}
+            >
+              Submit Enrollment
+            </button>
+          )}
         </article>
 
         <article className="dashboard-card">
           <div className="card-heading">
             <div>
-              <h2>Enrollment Progress</h2>
-
-              <p>Current enrollment process</p>
+              <h2>Enrollment Status</h2>
+              <p>Current enrollment update</p>
             </div>
           </div>
 
-          <div className="enrollment-timeline">
-            {stages.map((stage, index) => {
-              const stageStatus = stage.status || "Pending";
+          <StatusBadge
+            status={
+              enrollment.status || student.enrollmentStatus || "Not Available"
+            }
+          />
 
-              const completed = stageStatus === "Completed";
+          <div style={{ marginTop: "16px" }}>
+            {enrollment.status === "Pending" && (
+              <p>
+                Your enrollment request has been submitted and is currently
+                awaiting administrator approval.
+              </p>
+            )}
 
-              return (
-                <div
-                  className="enrollment-stage"
-                  key={stage.id || stage.stage_id || index}
-                >
-                  <div
-                    className={
-                      completed
-                        ? "enrollment-stage-icon"
-                        : "enrollment-stage-icon enrollment-stage-pending"
-                    }
-                  >
-                    <CheckCircle2 size={18} />
-                  </div>
+            {enrollment.status === "Enrolled" && (
+              <p>
+                Your enrollment has been approved. You are officially enrolled
+                for the current semester.
+              </p>
+            )}
 
-                  <div>
-                    <strong>
-                      Step {index + 1}:{" "}
-                      {stage.title || stage.name || "Enrollment Stage"}
-                    </strong>
+            {enrollment.status === "Rejected" && (
+              <p>
+                Your enrollment request was not approved. Please contact the
+                registrar or submit a service request for assistance.
+              </p>
+            )}
 
-                    <span>{stageStatus}</span>
-                  </div>
-                </div>
-              );
-            })}
+            {!enrollment.status && (
+              <p>
+                No enrollment record was found. Click "Submit Enrollment" to
+                begin the enrollment process.
+              </p>
+            )}
           </div>
         </article>
       </section>

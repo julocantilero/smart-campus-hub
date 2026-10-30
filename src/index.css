@@ -4436,3 +4436,14 @@ tbody tr:last-child td {
   }
 }
 
+.table-container {
+  margin: 1rem 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.table-container input {
+  width: 320px;
+}
+
+

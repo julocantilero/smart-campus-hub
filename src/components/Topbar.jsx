@@ -11,24 +11,7 @@ function Topbar({ role, openSidebar, userName }) {
         <Menu size={23} />
       </button>
 
-      <div className="topbar-search">
-        <Search size={19} />
-
-        <input
-          type="text"
-          placeholder="Search students, faculty, requests..."
-        />
-      </div>
-
       <div className="topbar-actions">
-        <button
-          className="notification-button"
-          aria-label="View notifications"
-        >
-          <Bell size={21} />
-          <span className="notification-indicator" />
-        </button>
-
         <div className="topbar-profile">
           <div className="profile-avatar">
             <UserRound size={21} />
