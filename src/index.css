@@ -756,17 +756,19 @@ a {
 .dashboard-card {
   padding: 20px;
   border-radius: var(--radius-md);
+  
 }
 .full-width-card {
   margin-top: 18px;
 }
 .card-heading {
   margin-bottom: 18px;
-  display: flex;
+  display: grid;
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
 }
+
 .card-heading h2 {
   margin: 0;
   color: #1e293b;
@@ -4433,3 +4435,4 @@ tbody tr:last-child td {
     width: 100%;
   }
 }
+

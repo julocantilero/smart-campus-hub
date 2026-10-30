@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 
-function Sidebar({ role, isOpen, closeSidebar }) {
+function Sidebar({ role, userName, isOpen, closeSidebar }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -255,7 +255,7 @@ function Sidebar({ role, isOpen, closeSidebar }) {
             </div>
 
             <div className="sidebar-user-information">
-              <strong>Demo User</strong>
+              <strong>{userName || "Not Available"}</strong>
 
               <span>{role ? `${role}` : "Portal account"}</span>
             </div>

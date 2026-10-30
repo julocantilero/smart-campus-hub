@@ -66,7 +66,7 @@ function FacultyDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const currentSection = searchParams.get("section") || "dashboard";
-
+  
   const [faculty, setFaculty] = useState(emptyFaculty);
 
   const [workload, setWorkload] = useState(emptyWorkload);
@@ -526,7 +526,7 @@ function FacultyDashboard() {
   */
 
   return (
-    <DashboardLayout role="faculty">
+    <DashboardLayout role="faculty" userName={faculty.fullname}>
       <section className="page-heading">
         <div>
           <p className="academic-year">Academic Year {academicYear}</p>

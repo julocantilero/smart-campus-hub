@@ -71,3 +71,59 @@ export async function updateRequestStatus(requestId, status) {
 
   return response.json();
 }
+
+export async function getDirectory() {
+  const response = await fetch(
+    `${API_BASE_URL}/shared/directory.php`,
+    {
+      credentials: "include",
+    }
+  );
+
+  return response.json();
+}
+
+export async function createDirectory(data) {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/createDirectory.php`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  return response.json();
+}
+
+export async function deleteDirectory(id) {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/deleteDirectory.php?id=${id}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    }
+  );
+
+  return response.json();
+}
+
+export async function deleteAnnouncement(id) {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/deleteAnnouncement.php`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    }
+  );
+
+  return response.json();
+}
+

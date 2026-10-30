@@ -11,6 +11,10 @@ import {
   getReports,
   createAnnouncement,
   updateRequestStatus,
+  getDirectory,
+  deleteDirectory,
+  createDirectory,
+  deleteAnnouncement,
 } from "../services/adminApi";
 import { getSession } from "../services/authApi";
 import { getAnnouncements } from "../services/sharedApi";
@@ -24,6 +28,7 @@ function AdminDashboard() {
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [directoryEntries, setDirectoryEntries] = useState([]);
   const iconMap = {
     Students: Users,
     Faculty: GraduationCap,
@@ -45,6 +50,16 @@ function AdminDashboard() {
   useEffect(() => {
     checkSession();
   }, []);
+
+  const [showDirectoryModal, setShowDirectoryModal] = useState(false);
+
+  const [directoryForm, setDirectoryForm] = useState({
+    name: "",
+    type: "",
+    email: "",
+    location: "",
+    service: "",
+  });
 
   async function checkSession() {
     const session = await getSession();
@@ -103,6 +118,24 @@ function AdminDashboard() {
     return descriptions[section] || descriptions.dashboard;
   }
 
+  async function handleDeleteAnnouncement(id) {
+    const confirmed = window.confirm("Delete this announcement?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteAnnouncement(id);
+
+      setAnnouncements((previous) =>
+        previous.filter((announcement) => announcement.id !== id),
+      );
+    } catch (error) {
+      alert(error.message || "Failed to delete announcement.");
+    }
+  }
+
   async function submitAnnouncement() {
     if (
       !announcementForm.title.trim() ||
@@ -158,6 +191,46 @@ function AdminDashboard() {
     }
   }
 
+  async function submitDirectory() {
+    try {
+      const response = await createDirectory(directoryForm);
+
+      const newEntry = response?.data || response;
+
+      setDirectoryEntries((previous) => [newEntry, ...previous]);
+
+      setDirectoryForm({
+        name: "",
+        type: "",
+        email: "",
+        location: "",
+        service: "",
+      });
+
+      setShowDirectoryModal(false);
+    } catch (error) {
+      alert(error.message || "Failed to create directory entry.");
+    }
+  }
+
+  async function handleDeleteDirectory(id) {
+    const confirmed = window.confirm("Delete this directory entry?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteDirectory(id);
+
+      setDirectoryEntries((previous) =>
+        previous.filter((entry) => entry.id !== id),
+      );
+    } catch (error) {
+      alert(error.message || "Failed to delete directory entry.");
+    }
+  }
+
   async function loadAdminDashboard() {
     try {
       setLoading(true);
@@ -171,6 +244,7 @@ function AdminDashboard() {
         getAnnouncements(),
         getAdminRequests(),
         getReports(),
+        getDirectory(),
       ]);
 
       console.log(results);
@@ -182,6 +256,7 @@ function AdminDashboard() {
         announcementsResult,
         requestsResult,
         reportsResult,
+        directoryResult,
       ] = results;
 
       let successCount = 0;
@@ -231,6 +306,12 @@ function AdminDashboard() {
         setReports(reportsResult.value?.data || []);
       }
 
+      if (directoryResult.status === "fulfilled") {
+        successCount++;
+
+        setDirectoryEntries(directoryResult.value?.data || []);
+      }
+
       if (successCount > 0) {
         setApiConnected(true);
         setPageMessage("");
@@ -255,7 +336,7 @@ function AdminDashboard() {
   }
 
   return (
-    <DashboardLayout role="admin">
+    <DashboardLayout role="admin" userName={admin.email}>
       {pageMessage && (
         <div
           className={
@@ -305,11 +386,17 @@ function AdminDashboard() {
           requests={requests}
           changeSection={changeSection}
           setShowAnnouncementModal={setShowAnnouncementModal}
+          setShowDirectoryModal={setShowDirectoryModal}
         />
       )}
 
       {currentSection === "directory" && (
-        <AdminDirectorySection changeSection={changeSection} />
+        <AdminDirectorySection
+          changeSection={changeSection}
+          directoryEntries={directoryEntries}
+          handleDelete={handleDeleteDirectory}
+          openModal={() => setShowDirectoryModal(true)}
+        />
       )}
 
       {currentSection === "enrollment" && (
@@ -327,6 +414,8 @@ function AdminDashboard() {
         <AdminAnnouncementsSection
           announcements={announcements}
           changeSection={changeSection}
+          handleDeleteAnnouncement={handleDeleteAnnouncement}
+          openAnnouncementModal={() => setShowAnnouncementModal(true)}
         />
       )}
 
@@ -347,6 +436,15 @@ function AdminDashboard() {
           closeModal={() => setShowAnnouncementModal(false)}
         />
       )}
+
+      {showDirectoryModal && (
+        <DirectoryModal
+          form={directoryForm}
+          setForm={setDirectoryForm}
+          submitDirectory={submitDirectory}
+          closeModal={() => setShowDirectoryModal(false)}
+        />
+      )}
     </DashboardLayout>
   );
 }
@@ -356,20 +454,14 @@ function AdminOverview({
   requests,
   changeSection,
   setShowAnnouncementModal,
+  setShowDirectoryModal,
 }) {
   return (
     <section className="dashboard-grid">
       <article className="dashboard-card" style={{ cursor: "pointer" }}>
         <div className="card-heading">
           <h2>Announcements</h2>
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => setShowAnnouncementModal(true)}
-          >
-            <Plus size={18} />
-            Create
-          </button>
+          
         </div>
 
         <h3>{announcements.length}</h3>
@@ -424,7 +516,12 @@ function AdminOverview({
   );
 }
 
-function AdminDirectorySection({ changeSection }) {
+function AdminDirectorySection({
+  changeSection,
+  directoryEntries,
+  handleDelete,
+  openModal,
+}) {
   return (
     <section className="dashboard-card">
       <button
@@ -435,9 +532,53 @@ function AdminDirectorySection({ changeSection }) {
         Back to Dashboard
       </button>
 
-      <h2>Campus Directory</h2>
+      <div className="card-heading">
+        <h2>Campus Directory</h2>
 
-      <p>Directory management will appear here.</p>
+        <button type="button" className="primary-button" onClick={openModal}>
+          <Plus size={18} />
+          Add Office
+        </button>
+      </div>
+
+      {directoryEntries.length === 0 ? (
+        <p>No directory entries found.</p>
+      ) : (
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Office</th>
+                <th>Type</th>
+                <th>Email</th>
+                <th>Location</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {directoryEntries.map((entry) => (
+                <tr key={entry.id}>
+                  <td>{entry.name || entry.office_name}</td>
+                  <td>{entry.type || "N/A"}</td>
+                  <td>{entry.email || "N/A"}</td>
+                  <td>{entry.location || "N/A"}</td>
+
+                  <td>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => handleDelete(entry.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }
@@ -516,7 +657,12 @@ function AdminReportsSection({ reports, changeSection }) {
   );
 }
 
-function AdminAnnouncementsSection({ announcements, changeSection }) {
+function AdminAnnouncementsSection({
+  announcements,
+  changeSection,
+  handleDeleteAnnouncement,
+  openAnnouncementModal,
+}) {
   return (
     <section className="dashboard-card">
       <button
@@ -529,6 +675,15 @@ function AdminAnnouncementsSection({ announcements, changeSection }) {
 
       <h2>Announcements</h2>
 
+      <button
+        type="button"
+        className="primary-button"
+        onClick={openAnnouncementModal}
+      >
+        <Plus size={18} />
+        Create Announcement
+      </button>
+
       <div className="announcement-list">
         {Array.isArray(announcements) &&
           announcements.map((announcement) => (
@@ -540,6 +695,13 @@ function AdminAnnouncementsSection({ announcements, changeSection }) {
                   announcement.content ||
                   "No description available"}
               </p>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => handleDeleteAnnouncement(announcement.id)}
+              >
+                Delete
+              </button>
             </div>
           ))}
       </div>
@@ -680,6 +842,108 @@ function AnnouncementModal({
           onClick={submitAnnouncement}
         >
           {submitting ? "Publishing..." : "Publish"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DirectoryModal({ form, setForm, submitDirectory, closeModal }) {
+  return (
+    <div className="modal-overlay">
+      <div className="request-modal">
+        <div className="modal-heading">
+          <h2>Add Office</h2>
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={closeModal}
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="form-group">
+          <label>Office Name</label>
+
+          <input
+            type="text"
+            value={form.name}
+            onChange={(event) =>
+              setForm((previous) => ({
+                ...previous,
+                name: event.target.value,
+              }))
+            }
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Type</label>
+
+          <input
+            type="text"
+            value={form.type}
+            onChange={(event) =>
+              setForm((previous) => ({
+                ...previous,
+                type: event.target.value,
+              }))
+            }
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Email</label>
+
+          <input
+            type="email"
+            value={form.email}
+            onChange={(event) =>
+              setForm((previous) => ({
+                ...previous,
+                email: event.target.value,
+              }))
+            }
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Location</label>
+
+          <input
+            type="text"
+            value={form.location}
+            onChange={(event) =>
+              setForm((previous) => ({
+                ...previous,
+                location: event.target.value,
+              }))
+            }
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Service</label>
+
+          <textarea
+            value={form.service}
+            onChange={(event) =>
+              setForm((previous) => ({
+                ...previous,
+                service: event.target.value,
+              }))
+            }
+          />
+        </div>
+
+        <button
+          type="button"
+          className="primary-button"
+          onClick={submitDirectory}
+        >
+          Create Entry
         </button>
       </div>
     </div>

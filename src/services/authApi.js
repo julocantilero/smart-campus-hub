@@ -31,3 +31,4 @@ export async function logout() {
 
   return response.json();
 }
+

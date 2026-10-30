@@ -139,7 +139,7 @@ function StudentDashboard() {
   const [pageMessage, setPageMessage] = useState("");
 
   const navigate = useNavigate();
-
+  
   /*
   |--------------------------------------------------------------------------
   | Load dashboard information
@@ -522,7 +522,7 @@ function StudentDashboard() {
   */
 
   return (
-    <DashboardLayout role="student">
+    <DashboardLayout role="student" userName={student?.fullname || "Not Available"}>
       <section className="page-heading">
         <div>
           <p className="academic-year">Academic Year {academicYear}</p>

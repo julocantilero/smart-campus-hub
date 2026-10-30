@@ -1,9 +1,8 @@
 import { useState } from "react";
-
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
-function DashboardLayout({ role, children }) {
+function DashboardLayout({ role, userName, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   function openSidebar() {
@@ -19,6 +18,7 @@ function DashboardLayout({ role, children }) {
       <Sidebar
         role={role}
         isOpen={sidebarOpen}
+        userName={userName}
         closeSidebar={closeSidebar}
       />
 

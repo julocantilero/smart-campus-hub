@@ -1,6 +1,6 @@
 import { Bell, Menu, Search, UserRound } from "lucide-react";
 
-function Topbar({ role, openSidebar }) {
+function Topbar({ role, openSidebar, userName }) {
   return (
     <header className="topbar">
       <button
@@ -35,7 +35,7 @@ function Topbar({ role, openSidebar }) {
           </div>
 
           <div className="profile-information">
-            <strong>Demo User</strong>
+            <strong>{userName || "Not Available"}</strong>
             <span>{role}</span>
           </div>
         </div>
