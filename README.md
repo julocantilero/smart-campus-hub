@@ -1,10 +1,5 @@
-Run Using:
-
-npm run dev
-
-
 Install Dependencies
-npm install react-router-dom
+<br>npm install react-router-dom
 
 npm install lucide-react
 
@@ -15,3 +10,11 @@ npm install framer-motion
 npm install @mui/material @emotion/react @emotion/styled
 
 npm install jspdf
+
+
+
+
+<br>Run Using:
+npm run dev
+
+
