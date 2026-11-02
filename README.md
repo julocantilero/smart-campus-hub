@@ -14,7 +14,7 @@ npm install jspdf
 
 
 
-<br>Run Using:
-npm run dev
+Run Using:
+<br>npm run dev
 
 
